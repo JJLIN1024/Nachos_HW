@@ -21,6 +21,8 @@
 #include "machine.h"
 #include "noff.h"
 
+#define PAGE_USED true
+#define PAGE_FREE false
 
 //----------------------------------------------------------------------
 // SwapHeader
@@ -52,27 +54,29 @@ SwapHeader (NoffHeader *noffH)
 //	only uniprogramming, and we have a single unsegmented page table
 //----------------------------------------------------------------------
 
-// Initialized the physical page usage information table
-bool AddrSpace::usedPhyPage[NumPhysPages] = {0};
+// Initialized the physical page usage information table & free page info
+bool AddrSpace::usedPhyPage[NumPhysPages] = {PAGE_FREE};
+int AddrSpace::numFreePage = NumPhysPages;
 
 AddrSpace::AddrSpace()
 {
-    pageTable = new TranslationEntry[NumPhysPages];
-    for (unsigned int i = 0; i < NumPhysPages; i++) {
-	pageTable[i].virtualPage = i;	// for now, virt page # = phys page #
-	pageTable[i].physicalPage = i;
-//	pageTable[i].physicalPage = 0;
-	pageTable[i].valid = TRUE;
-//	pageTable[i].valid = FALSE;
-	pageTable[i].use = FALSE;
-	pageTable[i].dirty = FALSE;
-	pageTable[i].readOnly = FALSE;  
-    }
-    
-    // zero out the entire address space
-//    bzero(kernel->machine->mainMemory, MemorySize);
-    
-
+//     // Assumed that the page table's size is the same as the number of 
+//     // Physical pages, which is not pratical. The size of page table should
+//     // be something like Physical pages / 2^k, but since we're not dealing with 
+//     // page fault here, so we'll just initialized it to the size of program(at Load time)
+//     pageTable = new TranslationEntry[NumPhysPages];
+//     for (unsigned int i = 0; i < NumPhysPages; i++) {
+// 	pageTable[i].virtualPage = i;	// for now, virt page # = phys page #
+// 	pageTable[i].physicalPage = i;
+// //	pageTable[i].physicalPage = 0;
+// 	pageTable[i].valid = TRUE;
+// //	pageTable[i].valid = FALSE;
+// 	pageTable[i].use = FALSE;
+// 	pageTable[i].dirty = FALSE;
+// 	pageTable[i].readOnly = FALSE;  
+//     }
+//     // zero out the entire address space
+// //    bzero(kernel->machine->mainMemory, MemorySize);
 }
 
 //----------------------------------------------------------------------
@@ -83,7 +87,8 @@ AddrSpace::AddrSpace()
 AddrSpace::~AddrSpace()
 {
     for(unsigned int i = 0; i < numPages; i++) {
-        AddrSpace::usedPhyPage[pageTable[i].physicalPage] = false;
+        AddrSpace::usedPhyPage[pageTable[i].physicalPage] = PAGE_FREE;
+        AddrSpace::numFreePage++;
     }
    delete pageTable;
 }
@@ -124,23 +129,23 @@ AddrSpace::Load(char *fileName)
 //	cout << "number of pages of " << fileName<< " is "<<numPages<<endl;
     size = numPages * PageSize;
 
-    ASSERT(numPages <= NumPhysPages);		// check we're not trying
-						// to run anything too big --
-						// at least until we have
-						// virtual memory
+    ASSERT(numPages <= NumPhysPages);
+    
+    ASSERT(numPages <= numFreePage);	// we changed the page table size! No longer as big as NumPhysPages
 
     pageTable = new TranslationEntry[numPages];
     for(unsigned int i = 0, j = 0; i < numPages; i++) {
         pageTable[i].virtualPage = i;
-	// Linearly search for the first unused page
-	while(j < NumPhysPages && AddrSpace::usedPhyPage[j] == true) 
-	    j++;
-	AddrSpace::usedPhyPage[j] = true;
-	pageTable[i].physicalPage = j;
-	pageTable[i].valid = true;
-	pageTable[i].use = false;
-	pageTable[i].dirty = false;
-	pageTable[i].readOnly = false;
+        // Linearly search for the first unused page
+        while(j < NumPhysPages && AddrSpace::usedPhyPage[j] == PAGE_USED) 
+            j++;
+        AddrSpace::usedPhyPage[j] = PAGE_USED;
+        AddrSpace::numFreePage--;
+        pageTable[i].physicalPage = j;
+        pageTable[i].valid = true;
+        pageTable[i].use = false;
+        pageTable[i].dirty = false;
+        pageTable[i].readOnly = false;
     }
 
     DEBUG(dbgAddr, "Initializing address space: " << numPages << ", " << size);
