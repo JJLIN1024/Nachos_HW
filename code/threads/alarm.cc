@@ -51,13 +51,19 @@ void Alarm::CallBack() {
     Interrupt *interrupt = kernel->interrupt;
     MachineStatus status = interrupt->getStatus();
     bool woken = _sleepList.PutToReady();
+    
+    kernel->currentThread->setPriority(kernel->currentThread->getPriority() - 1);
+
     //如果沒有程式需要計數了，就把時脈中斷遮蔽掉
     if (status == IdleMode && !woken && _sleepList.IsEmpty()) {// is it time to quit?
         if (!interrupt->AnyFutureInterrupts()) {
             timer->Disable();   // turn off the timer
         }
     } else {                    // there's someone to preempt
-        interrupt->YieldOnReturn();
+        if(kernel->scheduler->getSchedulerType() == RR || kernel->scheduler->getSchedulerType() == Priority ) {
+            cout << "=== interrupt->YieldOnReturn ===" << endl;
+            interrupt->YieldOnReturn();
+        }
     }
 }
 
@@ -65,6 +71,12 @@ void Alarm::WaitUntil(int x) {
     //關中斷
     IntStatus oldLevel = kernel->interrupt->SetLevel(IntOff);
     Thread* t = kernel->currentThread;
+
+    // burst time
+    int worktime = kernel->stats->userTicks - t->getStartTime();
+    t->setBurstTime(t->getBurstTime() + worktime);
+    t->setStartTime(kernel->stats->userTicks);
+    
     cout << "Alarm::WaitUntil go sleep" << endl;
     _sleepList.PutToSleep(t, x);
     //開中斷
