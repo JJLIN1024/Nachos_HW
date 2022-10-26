@@ -54,12 +54,8 @@ UserProgKernel::UserProgKernel(int argc, char **argv)
 void
 UserProgKernel::Initialize()
 {
-    Initialize(RR);
-}
-void
-UserProgKernel::Initialize(SchedulerType type)
-{
-    ThreadedKernel::Initialize(type);	// init multithreading
+    ThreadedKernel::Initialize();	// init multithreading
+
     machine = new Machine(debugUserProg);
     fileSystem = new FileSystem();
 #ifdef FILESYS

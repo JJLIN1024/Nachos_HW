@@ -145,10 +145,3 @@ __main:
         j       $31
         .end    __main
 
-        .globl  Sleep
-        .ent    Sleep
-Sleep:
-        addiu   $2,$0,SC_Sleep
-        syscall
-        j       $31
-        .end    Sleep
