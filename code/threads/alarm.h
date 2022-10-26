@@ -27,7 +27,7 @@
 class sleepList {
     public:
         sleepList():_current_interrupt(0) {};
-        void Sleep(Thread *t, int x);
+        void GotoBed(Thread *t, int x);
     bool Wakeup();
     bool IsEmpty();
     private:
