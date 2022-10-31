@@ -437,27 +437,19 @@ threadRunner() {
 }
 
 void
-Thread::SchedulingTest1()
-{
-    const int thread_num = 4;
-    char *name[thread_num] = {"t1", "t2", "t3", "t4"};
-    int thread_burst[thread_num] = {10, 3, 3, 2};
+Thread::SchedulingTest()
+{   
     
-    Thread *t;
-    for (int i = 0; i < thread_num; i ++) {
-        t = new Thread(name[i]);
-        t->setBurstTime(thread_burst[i]);
-        t->Fork((VoidFunctionPtr) threadRunner, (void *)NULL);
-    }
-    kernel->currentThread->Yield();
-}
-
-void
-Thread::SchedulingTest2()
-{
+    // // test case 1
+    // const int thread_num = 4;
+    // char *name[thread_num] = {"t1", "t2", "t3", "t4"};
+    // int thread_burst[thread_num] = {3, 3, 1, 9};
+    
+    // test case 2
     const int thread_num = 5;
     char *name[thread_num] = {"t5", "t6", "t7", "t8", "t9"};
-    int thread_burst[thread_num] = {1, 1, 3, 9, 4};
+    int thread_burst[thread_num] = {1, 6, 3, 9, 4};
+
     
     Thread *t;
     for (int i = 0; i < thread_num; i ++) {
@@ -467,8 +459,6 @@ Thread::SchedulingTest2()
     }
     kernel->currentThread->Yield();
 }
-
-
 
 
 void
