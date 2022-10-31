@@ -109,6 +109,8 @@ ThreadedKernel::SelfTest() {
    LibSelfTest();		// test library routines
    
    currentThread->SelfTest();	// test thread switching
+
+   Thread::SchedulingTest(); // CPU scheduling test
    
    				// test semaphore operation
    semaphore = new Semaphore("test", 0);

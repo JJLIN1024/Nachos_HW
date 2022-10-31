@@ -105,6 +105,15 @@ class Thread {
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
     void Print() { cout << name; }
+
+    void setBurstTime(int t)	{burstTime = t;}
+    int getBurstTime()		{return burstTime;}
+    void setStartTime(int t)	{startTime = t;}
+    int getStartTime()		{return startTime;}
+    void setPriority(int t)	{execPriority = t;}
+    int getPriority()		{return execPriority;}
+    static void SchedulingTest();
+
     void SelfTest();		// test whether thread impl is working
 
   private:
@@ -119,6 +128,10 @@ class Thread {
     void StackAllocate(VoidFunctionPtr func, void *arg);
     				// Allocate a stack for thread.
 				// Used internally by Fork()
+    int burstTime;	// predicted burst time
+    int startTime;	// the start time of the thread
+    int execPriority;	// the execute priority of the thread
+
 
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 
