@@ -56,7 +56,7 @@ void Alarm::CallBack() {
             timer->Disable();   // turn off the timer
         }
     } else {                    // there's someone to preempt
-        cout << "=== interrupt->YieldOnReturn ===" << endl;
+        // cout << "=== interrupt->YieldOnReturn ===" << endl;
         interrupt->YieldOnReturn();
     }
 

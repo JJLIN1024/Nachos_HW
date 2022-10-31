@@ -112,7 +112,9 @@ class Thread {
     int getStartTime()		{return startTime;}
     void setPriority(int t)	{execPriority = t;}
     int getPriority()		{return execPriority;}
-    static void SchedulingTest();
+    static void SchedulingTest1();
+    static void SchedulingTest2();
+
 
     void SelfTest();		// test whether thread impl is working
 

@@ -432,27 +432,43 @@ threadRunner() {
     while (thread->getBurstTime() > 0) {
         thread->setBurstTime(thread->getBurstTime() - 1);
         kernel->interrupt->OneTick();
-        printf("%s: remaining %d\n", kernel->currentThread->getName(), kernel->currentThread->getBurstTime());
+        printf("%s's burst time left: %d(s)\n", kernel->currentThread->getName(), kernel->currentThread->getBurstTime());
     }
 }
 
 void
-Thread::SchedulingTest()
+Thread::SchedulingTest1()
 {
     const int thread_num = 4;
-    char *name[thread_num] = {"A", "B", "C", "D"};
-    int thread_priority[thread_num] = {5, 1, 3, 2};
-    int thread_burst[thread_num] = {3, 9, 7, 3};
+    char *name[thread_num] = {"t1", "t2", "t3", "t4"};
+    int thread_burst[thread_num] = {10, 3, 3, 2};
     
     Thread *t;
     for (int i = 0; i < thread_num; i ++) {
         t = new Thread(name[i]);
-        t->setPriority(thread_priority[i]);
         t->setBurstTime(thread_burst[i]);
         t->Fork((VoidFunctionPtr) threadRunner, (void *)NULL);
     }
     kernel->currentThread->Yield();
 }
+
+void
+Thread::SchedulingTest2()
+{
+    const int thread_num = 5;
+    char *name[thread_num] = {"t5", "t6", "t7", "t8", "t9"};
+    int thread_burst[thread_num] = {1, 1, 3, 9, 4};
+    
+    Thread *t;
+    for (int i = 0; i < thread_num; i ++) {
+        t = new Thread(name[i]);
+        t->setBurstTime(thread_burst[i]);
+        t->Fork((VoidFunctionPtr) threadRunner, (void *)NULL);
+    }
+    kernel->currentThread->Yield();
+}
+
+
 
 
 void
