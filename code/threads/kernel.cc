@@ -46,11 +46,11 @@ ThreadedKernel::ThreadedKernel(int argc, char **argv)
 //----------------------------------------------------------------------
 
 void
-ThreadedKernel::Initialize(SchedulerType type)
+ThreadedKernel::Initialize()
 {
     stats = new Statistics();		// collect statistics
     interrupt = new Interrupt;		// start up interrupt handling
-    scheduler = new Scheduler(type);	// initialize the ready queue
+    scheduler = new Scheduler();	// initialize the ready queue
     alarm = new Alarm(randomSlice);	// start up time slicing
 
     // We didn't explicitly allocate the current thread we are running in.

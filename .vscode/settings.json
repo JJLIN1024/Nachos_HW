@@ -2,6 +2,16 @@
     "files.associations": {
         "iostream": "cpp",
         "list": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "__tuple": "cpp",
+        "chrono": "cpp",
+        "compare": "cpp",
+        "cstddef": "cpp",
+        "limits": "cpp",
+        "ratio": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "variant": "cpp",
+        "new": "cpp"
     }
 }
