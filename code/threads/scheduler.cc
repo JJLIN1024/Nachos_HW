@@ -29,16 +29,17 @@
 //	Initially, no ready threads.
 //----------------------------------------------------------------------
 
-int SJFCompare(Thread *a, Thread *b) {
-    if(a->getBurstTime() == b->getBurstTime())
-        return 0;
-    return a->getBurstTime() > b->getBurstTime() ? 1 : -1;
-}
+// int SJFCompare(Thread *a, Thread *b) {
+//     if(a->getBurstTime() == b->getBurstTime())
+//         return 0;
+//     return a->getBurstTime() > b->getBurstTime() ? 1 : -1;
+// }
 
 
 Scheduler::Scheduler() {
     // implement shortest job first scheduling
-    readyList = new SortedList<Thread *>(SJFCompare);
+    // readyList = new SortedList<Thread *>(SJFCompare);
+    readyList = new List<Thread *>;
     toBeDestroyed = NULL;
 }
 
