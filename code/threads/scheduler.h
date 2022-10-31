@@ -18,6 +18,7 @@
 // thread is running, and which threads are ready but not running.
 
 enum SchedulerType {
+		FCFS,
         RR,     // Round Robin
         SJF,
         Priority
@@ -26,8 +27,12 @@ enum SchedulerType {
 class Scheduler {
   public:
 	Scheduler();		// Initialize list of ready threads 
+	Scheduler(SchedulerType type); // cpu scheduling type
 	~Scheduler();				// De-allocate ready list
 
+	SchedulerType getSchedulerType() {return schedulerType;}
+    void setSchedulerType(SchedulerType t) {schedulerType = t;}
+	
 	void ReadyToRun(Thread* thread);	
     					// Thread can be dispatched.
 	Thread* FindNextToRun();	// Dequeue first thread on the ready 
