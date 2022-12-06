@@ -27,10 +27,8 @@
 #define SC_Read		6
 #define SC_Write	7
 #define SC_Close	8
-#define SC_ThreadFork	9
-#define SC_ThreadYield	10
-#define SC_PrintInt	11
-#define SC_Sleep 12
+#define SC_Fork		9
+#define SC_Yield	10
 
 #ifndef IN_ASM
 
@@ -114,23 +112,18 @@ void Close(OpenFileId id);
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program. 
- *
- * Could define other operations, such as LockAcquire, LockRelease, etc.
  */
 
 /* Fork a thread to run a procedure ("func") in the *same* address space 
  * as the current thread.
  */
-void ThreadFork(void (*func)());
+void Fork(void (*func)());
 
 /* Yield the CPU to another runnable thread, whether in this address space 
  * or not. 
  */
-void ThreadYield();		
+void Yield();		
 
-void PrintInt(int number);	//my System Call
-
-void Sleep(int number); 
 #endif /* IN_ASM */
 
 #endif /* SYSCALL_H */
