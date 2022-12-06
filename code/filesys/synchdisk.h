@@ -6,13 +6,13 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
+#include "copyright.h"
+
 #ifndef SYNCHDISK_H
 #define SYNCHDISK_H
 
-#include "copyright.h"
 #include "disk.h"
 #include "synch.h"
-#include "callback.h"
 
 // The following class defines a "synchronous" disk abstraction.
 // As with other I/O devices, the raw physical disk is an asynchronous device --
@@ -24,11 +24,9 @@
 // This class provides the abstraction that for any individual thread
 // making a request, it waits around until the operation finishes before
 // returning.
-class Semaphore;
-class Lock;
-class SynchDisk : public CallBackObj {
+class SynchDisk {
   public:
-    SynchDisk(char* name);    		// Initialize a synchronous disk,
+    SynchDisk(const char* name);    	// Initialize a synchronous disk,
 					// by initializing the raw Disk.
     ~SynchDisk();			// De-allocate the synch disk data
     
@@ -38,9 +36,9 @@ class SynchDisk : public CallBackObj {
 					// or written.  These call
     					// Disk::ReadRequest/WriteRequest and
 					// then wait until the request is done.
-    void WriteSector(int sectorNumber, char* data);
+    void WriteSector(int sectorNumber, const char* data);
     
-    void CallBack();			// Called by the disk device interrupt
+    void RequestDone();			// Called by the disk device interrupt
 					// handler, to signal that the
 					// current disk operation is complete.
 

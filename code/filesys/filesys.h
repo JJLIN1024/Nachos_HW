@@ -43,43 +43,43 @@
 				// implementation is available
 class FileSystem {
   public:
-    FileSystem(bool format=true) {}
+    FileSystem(bool format) {}
 
-    bool Create(char *name) { 
+    bool Create(const char *name, int initialSize) { 
 	int fileDescriptor = OpenForWrite(name);
 
-	if (fileDescriptor == -1) return FALSE;
+	if (fileDescriptor == -1) return false;
 	Close(fileDescriptor); 
-	return TRUE; 
+	return true; 
 	}
 
-    OpenFile* Open(char *name) {
-	  int fileDescriptor = OpenForReadWrite(name, FALSE);
+    OpenFile* Open(const char *name) {
+	  int fileDescriptor = OpenForReadWrite(name, false);
 
 	  if (fileDescriptor == -1) return NULL;
 	  return new OpenFile(fileDescriptor);
       }
 
-    bool Remove(char *name) { return Unlink(name) == 0; }
+    bool Remove(const char *name) { return Unlink(name) == 0; }
 
 };
 
 #else // FILESYS
 class FileSystem {
   public:
-    FileSystem(bool format=true);		// Initialize the file system.
+    FileSystem(bool format);		// Initialize the file system.
 					// Must be called *after* "synchDisk" 
 					// has been initialized.
     					// If "format", there is nothing on
 					// the disk, so initialize the directory
     					// and the bitmap of free blocks.
 
-    bool Create(char *name, int initialSize);  	
+    bool Create(const char *name, int initialSize);  	
 					// Create a file (UNIX creat)
 
-    OpenFile* Open(char *name); 	// Open a file (UNIX open)
+    OpenFile* Open(const char *name); 	// Open a file (UNIX open)
 
-    bool Remove(char *name);  		// Delete a file (UNIX unlink)
+    bool Remove(const char *name);  	// Delete a file (UNIX unlink)
 
     void List();			// List all the files in the file system
 

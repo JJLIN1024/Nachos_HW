@@ -3,12 +3,12 @@
 //
 // DO NOT CHANGE -- these stats are maintained by the machine emulation.
 //
-// Copyright (c) 1992-1996 The Regents of the University of California.
+// Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
-#include "debug.h"
+#include "utility.h"
 #include "stats.h"
 
 //----------------------------------------------------------------------
@@ -33,13 +33,12 @@ Statistics::Statistics()
 void
 Statistics::Print()
 {
-    cout << "Ticks: total " << totalTicks << ", idle " << idleTicks;
-		cout << ", system " << systemTicks << ", user " << userTicks <<"\n";
-    cout << "Disk I/O: reads " << numDiskReads;
-		cout << ", writes " << numDiskWrites << "\n";
-		cout << "Console I/O: reads " << numConsoleCharsRead;
-    cout << ", writes " << numConsoleCharsWritten << "\n";
-    cout << "Paging: faults " << numPageFaults << "\n";
-    cout << "Network I/O: packets received " << numPacketsRecvd;
-		cout << ", sent " << numPacketsSent << "\n";
+    printf("Ticks: total %d, idle %d, system %d, user %d\n", totalTicks, 
+	idleTicks, systemTicks, userTicks);
+    printf("Disk I/O: reads %d, writes %d\n", numDiskReads, numDiskWrites);
+    printf("Console I/O: reads %d, writes %d\n", numConsoleCharsRead, 
+	numConsoleCharsWritten);
+    printf("Paging: faults %d\n", numPageFaults);
+    printf("Network I/O: packets received %d, sent %d\n", numPacketsRecvd, 
+	numPacketsSent);
 }

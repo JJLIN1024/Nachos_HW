@@ -19,7 +19,6 @@
 
 #include "copyright.h"
 #include "utility.h"
-#include "callback.h"
 
 // The following class defines a physical disk I/O device.  The disk
 // has a single surface, split up into "tracks", and each track split
@@ -47,17 +46,18 @@
 //
 // The track buffer simulation can be disabled by compiling with -DNOTRACKBUF
 
-const int SectorSize = 128;		// number of bytes per disk sector
-const int SectorsPerTrack  = 32;	// number of sectors per disk track 
-const int NumTracks = 32;		// number of tracks per disk
-const int NumSectors = (SectorsPerTrack * NumTracks);
+const int SectorSize = 128;	// number of bytes per disk sector
+const int SectorsPerTrack = 32;	// number of sectors per disk track 
+const int NumTracks = 32;	// number of tracks per disk
+const int NumSectors = SectorsPerTrack * NumTracks;
 					// total # of sectors per disk
 
-class Disk : public CallBackObj {
+class Disk {
   public:
-    Disk(char* name, CallBackObj *toCall); // Create a simulated disk.  
-					// Invoke toCall->CallBack() 
-					// when each request completes.
+    Disk(const char* name, VoidFunctionPtr callWhenDone, void* callArg);
+    					// Create a simulated disk.  
+					// Invoke (*callWhenDone)(callArg) 
+					// every time a request completes.
     ~Disk();				// Deallocate the disk.
     
     void ReadRequest(int sectorNumber, char* data);
@@ -65,10 +65,10 @@ class Disk : public CallBackObj {
 					// These routines send a request to 
     					// the disk and return immediately.
     					// Only one request allowed at a time!
-    void WriteRequest(int sectorNumber, char* data);
+    void WriteRequest(int sectorNumber, const char* data);
 
-    void CallBack();			// Invoked when disk request 
-					// finishes. In turn calls, callWhenDone.
+    void HandleInterrupt();		// Interrupt handler, invoked when
+					// disk request finishes.
 
     int ComputeLatency(int newSector, bool writing);	
     					// Return how long a request to 
@@ -77,7 +77,9 @@ class Disk : public CallBackObj {
 
   private:
     int fileno;				// UNIX file number for simulated disk 
-    CallBackObj *callWhenDone;		// Invoke when any disk request finishes
+    VoidFunctionPtr handler;		// Interrupt handler, to be invoked 
+					// when any disk request finishes
+    void* handlerArg;			// Argument to interrupt handler 
     bool active;     			// Is a disk operation in progress?
     int lastSector;			// The previous disk request 
     int bufferInit;			// When the track buffer started 

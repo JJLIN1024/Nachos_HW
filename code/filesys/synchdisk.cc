@@ -17,6 +17,19 @@
 #include "copyright.h"
 #include "synchdisk.h"
 
+//----------------------------------------------------------------------
+// DiskRequestDone
+// 	Disk interrupt handler.  Need this to be a C routine, because 
+//	C++ can't handle pointers to member functions.
+//----------------------------------------------------------------------
+
+static void
+DiskRequestDone (void* arg)
+{
+    SynchDisk* disk = (SynchDisk *)arg;
+
+    disk->RequestDone();
+}
 
 //----------------------------------------------------------------------
 // SynchDisk::SynchDisk
@@ -27,11 +40,11 @@
 //	   (usually, "DISK")
 //----------------------------------------------------------------------
 
-SynchDisk::SynchDisk(char* name)
+SynchDisk::SynchDisk(const char* name)
 {
     semaphore = new Semaphore("synch disk", 0);
     lock = new Lock("synch disk lock");
-    disk = new Disk(name, this);
+    disk = new Disk(name, DiskRequestDone, this);
 }
 
 //----------------------------------------------------------------------
@@ -75,7 +88,7 @@ SynchDisk::ReadSector(int sectorNumber, char* data)
 //----------------------------------------------------------------------
 
 void
-SynchDisk::WriteSector(int sectorNumber, char* data)
+SynchDisk::WriteSector(int sectorNumber, const char* data)
 {
     lock->Acquire();			// only one disk I/O at a time
     disk->WriteRequest(sectorNumber, data);
@@ -84,13 +97,13 @@ SynchDisk::WriteSector(int sectorNumber, char* data)
 }
 
 //----------------------------------------------------------------------
-// SynchDisk::CallBack
+// SynchDisk::RequestDone
 // 	Disk interrupt handler.  Wake up any thread waiting for the disk
 //	request to finish.
 //----------------------------------------------------------------------
 
 void
-SynchDisk::CallBack()
+SynchDisk::RequestDone()
 { 
     semaphore->V();
 }

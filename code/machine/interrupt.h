@@ -28,7 +28,7 @@
 //
 //  DO NOT CHANGE -- part of the machine emulation
 //
-// Copyright (c) 1992-1996 The Regents of the University of California.
+// Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
@@ -37,7 +37,6 @@
 
 #include "copyright.h"
 #include "list.h"
-#include "callback.h"
 
 // Interrupts can be disabled (IntOff) or enabled (IntOn)
 enum IntStatus { IntOff, IntOn };
@@ -51,7 +50,7 @@ enum MachineStatus {IdleMode, SystemMode, UserMode};
 // In Nachos, we support a hardware timer device, a disk, a console
 // display and keyboard, and a network.
 enum IntType { TimerInt, DiskInt, ConsoleWriteInt, ConsoleReadInt, 
-			ElevatorInt, NetworkSendInt, NetworkRecvInt};
+				NetworkSendInt, NetworkRecvInt};
 
 // The following class defines an interrupt that is scheduled
 // to occur in the future.  The internal data structures are
@@ -59,13 +58,13 @@ enum IntType { TimerInt, DiskInt, ConsoleWriteInt, ConsoleReadInt,
 
 class PendingInterrupt {
   public:
-    PendingInterrupt(CallBackObj *callOnInt, int time, IntType kind);
+    PendingInterrupt(VoidFunctionPtr func, void* param, int time, IntType kind);
 				// initialize an interrupt that will
 				// occur in the future
 
-    CallBackObj *callOnInterrupt;// The object (in the hardware device
+    VoidFunctionPtr handler;    // The function (in the hardware device
 				// emulator) to call when the interrupt occurs
-    
+    void* arg;                  // The argument to the function.
     int when;			// When the interrupt is supposed to fire
     IntType type;		// for debugging
 };
@@ -77,36 +76,29 @@ class PendingInterrupt {
 
 class Interrupt {
   public:
-    Interrupt();		// initialize the interrupt simulation
-    ~Interrupt();		// de-allocate data structures
+    Interrupt();			// initialize the interrupt simulation
+    ~Interrupt();			// de-allocate data structures
     
-    IntStatus SetLevel(IntStatus level);
-    				// Disable or enable interrupts 
-				// and return previous setting.
+    IntStatus SetLevel(IntStatus level);// Disable or enable interrupts 
+					// and return previous setting.
 
-    void Enable() { (void) SetLevel(IntOn); }
-				// Enable interrupts.
-    IntStatus getLevel() {return level;}
-    				// Return whether interrupts
-				// are enabled or disabled
+    void Enable();			// Enable interrupts.
+    IntStatus getLevel() {return level;}// Return whether interrupts
+					// are enabled or disabled
     
-    void Idle(); 		// The ready queue is empty, roll 
-				// simulated time forward until the 
-				// next interrupt
+    void Idle(); 			// The ready queue is empty, roll 
+					// simulated time forward until the 
+					// next interrupt
 
-    void Halt(); 		// quit and print out stats
+    void Halt(); 			// quit and print out stats
     
-    void YieldOnReturn();	// cause a context switch on return 
-				// from an interrupt handler
+    void YieldOnReturn();		// cause a context switch on return 
+					// from an interrupt handler
 
-    MachineStatus getStatus() { return status; } 
+    MachineStatus getStatus() { return status; } // idle, kernel, user
     void setStatus(MachineStatus st) { status = st; }
-        			// idle, kernel, user
 
-    bool AnyFutureInterrupts() { return !pending->IsEmpty(); }
-    				// are any interrupts scheduled?
-
-    void DumpState();		// Print interrupt state
+    void DumpState();			// Print interrupt state
     
 
     // NOTE: the following are internal to the hardware simulation code.
@@ -114,31 +106,28 @@ class Interrupt {
     // but they need to be public since they are called by the
     // hardware device simulators.
 
-    void Schedule(CallBackObj *callTo, int when, IntType type);
-    				// Schedule an interrupt to occur
-				// at time "when".  This is called
-    				// by the hardware device simulators.
+    void Schedule(VoidFunctionPtr handler,// Schedule an interrupt to occur
+	void* arg, int when, IntType type);// at time ``when''.  This is called
+    					// by the hardware device simulators.
     
-    void OneTick();       	// Advance simulated time
+    void OneTick();       		// Advance simulated time
 
   private:
     IntStatus level;		// are interrupts enabled or disabled?
-    SortedList<PendingInterrupt *> *pending;		
-    				// the list of interrupts scheduled
+    List<PendingInterrupt*> *pending;	// the list of interrupts scheduled
 				// to occur in the future
-    bool inHandler;		// TRUE if we are running an interrupt handler
-    bool yieldOnReturn; 	// TRUE if we are to context switch
+    bool inHandler;		// true if we are running an interrupt handler
+    bool yieldOnReturn; 	// true if we are to context switch
 				// on return from the interrupt handler
     MachineStatus status;	// idle, kernel mode, user mode
 
     // these functions are internal to the interrupt simulation code
 
-    bool CheckIfDue(bool advanceClock); 
-    				// Check if any interrupts are supposed
-				// to occur now, and if so, do them
+    bool CheckIfDue(bool advanceClock); // Check if an interrupt is supposed
+					// to occur now
 
     void ChangeLevel(IntStatus old, 	// SetLevel, without advancing the
-			IntStatus now); // simulated time
+	IntStatus now);  		// simulated time
 };
 
 #endif // INTERRRUPT_H

@@ -23,15 +23,15 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
-#include "debug.h"
-#include "main.h"
+
+#include "system.h"
 #include "filehdr.h"
 
 //----------------------------------------------------------------------
 // FileHeader::Allocate
 // 	Initialize a fresh file header for a newly created file.
 //	Allocate data blocks for the file out of the map of free disk blocks.
-//	Return FALSE if there are not enough free blocks to accomodate
+//	Return false if there are not enough free blocks to accomodate
 //	the new file.
 //
 //	"freeMap" is the bit map of free disk sectors
@@ -44,11 +44,11 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
     if (freeMap->NumClear() < numSectors)
-	return FALSE;		// not enough space
+	return false;		// not enough space
 
     for (int i = 0; i < numSectors; i++)
-	dataSectors[i] = freeMap->FindAndSet();
-    return TRUE;
+	dataSectors[i] = freeMap->Find();
+    return true;
 }
 
 //----------------------------------------------------------------------
@@ -77,7 +77,7 @@ FileHeader::Deallocate(BitMap *freeMap)
 void
 FileHeader::FetchFrom(int sector)
 {
-    kernel->synchDisk->ReadSector(sector, (char *)this);
+    synchDisk->ReadSector(sector, (char *)this);
 }
 
 //----------------------------------------------------------------------
@@ -90,7 +90,7 @@ FileHeader::FetchFrom(int sector)
 void
 FileHeader::WriteBack(int sector)
 {
-    kernel->synchDisk->WriteSector(sector, (char *)this); 
+    synchDisk->WriteSector(sector, (char *)this); 
 }
 
 //----------------------------------------------------------------------
@@ -137,7 +137,7 @@ FileHeader::Print()
 	printf("%d ", dataSectors[i]);
     printf("\nFile contents:\n");
     for (i = k = 0; i < numSectors; i++) {
-	kernel->synchDisk->ReadSector(dataSectors[i], data);
+	synchDisk->ReadSector(dataSectors[i], data);
         for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
 	    if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
 		printf("%c", data[j]);
