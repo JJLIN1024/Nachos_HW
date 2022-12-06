@@ -26,19 +26,12 @@
 #include "copyright.h"
 #include "debug.h"
 #include "sysdep.h"
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <sys/file.h>
+#include "stdlib.h"
+#include "unistd.h"
+#include "sys/time.h"
+#include "sys/file.h"
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <cerrno>
-
-#ifdef SOLARIS
-// KMS
-// for open()
-#include <fcntl.h>
-#endif
 
 #ifdef LINUX	 // at this point, linux doesn't support mprotect 
 #define NO_MPROT     
@@ -57,18 +50,8 @@ extern "C" {
 
 // UNIX routines called by procedures in this file 
 
-#if defined CYGWIN
-  size_t getpagesize(void);
-#else
- int getpagesize(void);
-#endif
+int getpagesize(void);
 unsigned sleep(unsigned);
-//#ifdef SOLARIS
-//int usleep(useconds_t);
-//#else
-//void usleep(unsigned int);  // rcgood - to avoid spinning processes.
-//#endif
-
 
 #ifndef NO_MPROT	
 
@@ -86,23 +69,19 @@ int mprotect(char *, unsigned int, int);
 #endif
 #endif
 
-#if defined(BSD) || defined(SOLARIS) || defined(LINUX)
-//KMS
-// added Solaris and LINUX
+#ifdef NETWORK		// tend to generate spurious errors in g++
+			// so only include if really needed
+#ifdef BSD
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
              struct timeval *timeout);
 #else
 int select(int numBits, void *readFds, void *writeFds, void *exceptFds, 
 	struct timeval *timeout);
 #endif
-
 int socket(int, int, int);
-
-#if defined(SUNOS) || defined(ULTRIX)
-long tell(int);
-int bind (int, const void*, int);
-int recvfrom (int, void*, int, int, void*, int *);
-int sendto (int, const void*, int, int, void*, int);
+// int bind (int, const void*, int);
+// int recvfrom (int, void*, int, int, void*, int *);
+// int sendto (int, const void*, int, int, void*, int);
 #endif
 
 }
@@ -120,7 +99,7 @@ CallOnUserAbort(void (*func)(int))
 }
 
 //----------------------------------------------------------------------
-// Delay
+// Sleep
 // 	Put the UNIX process running Nachos to sleep for x seconds,
 //	to give the user time to start up another invocation of Nachos
 //	in a different UNIX shell.
@@ -130,23 +109,6 @@ void
 Delay(int seconds)
 {
     (void) sleep((unsigned) seconds);
-}
-
-//----------------------------------------------------------------------
-// UDelay
-// 	Put the UNIX process running Nachos to sleep for x microseconds,
-//	to prevent an idle Nachos process from spinning...
-//----------------------------------------------------------------------
-
-void 
-UDelay(unsigned int useconds)
-{
-//#ifdef SOLARIS
-//   usleep(useconds_t useconds);
-//#else
-//   usleep(useconds);
-//#endif /* SOLARIS */
-
 }
 
 //----------------------------------------------------------------------
@@ -229,23 +191,19 @@ AllocBoundedArray(int size)
 //	"size" -- amount of useful space in the array (in bytes)
 //----------------------------------------------------------------------
 
-#ifdef NO_MPROT
-void 
-DeallocBoundedArray(char *ptr, int /* size */)
-{
-    delete [] ptr;
-}
-#else
 void 
 DeallocBoundedArray(char *ptr, int size)
 {
+#ifdef NO_MPROT
+    delete [] ptr;
+#else
     int pgSize = getpagesize();
 
     mprotect(ptr - pgSize, pgSize, PROT_READ | PROT_WRITE | PROT_EXEC);
     mprotect(ptr + size, pgSize, PROT_READ | PROT_WRITE | PROT_EXEC);
     delete [] (ptr - pgSize);
-}
 #endif
+}
 
 //----------------------------------------------------------------------
 // PollFile
@@ -259,33 +217,16 @@ DeallocBoundedArray(char *ptr, int size)
 bool
 PollFile(int fd)
 {
-#if defined(SOLARIS) || defined(LINUX)
-// KMS
-    fd_set rfd,wfd,xfd;
-#else
-    int rfd = (1 << fd), wfd = 0, xfd = 0;
-#endif
-    int retVal;
+    int rfd = (1 << fd), wfd = 0, xfd = 0, retVal;
     struct timeval pollTime;
-
-#if defined(SOLARIS) || defined(LINUX)
-// KMS
-    FD_ZERO(&rfd);
-    FD_ZERO(&wfd);
-    FD_ZERO(&xfd);
-    FD_SET(fd,&rfd);
-#endif
 
 // don't wait if there are no characters on the file
     pollTime.tv_sec = 0;
     pollTime.tv_usec = 0;
 
 // poll file or socket
-#if defined(BSD)
+#ifdef BSD
     retVal = select(32, (fd_set*)&rfd, (fd_set*)&wfd, (fd_set*)&xfd, &pollTime);
-#elif defined(SOLARIS) || defined(LINUX)
-    // KMS
-    retVal = select(32, &rfd, &wfd, &xfd, &pollTime);
 #else
     retVal = select(32, &rfd, &wfd, &xfd, &pollTime);
 #endif
@@ -387,9 +328,8 @@ Lseek(int fd, int offset, int whence)
 int 
 Tell(int fd)
 {
-#if defined(BSD) || defined(SOLARIS) || defined(LINUX)
+#ifdef BSD
     return lseek(fd,0,SEEK_CUR); // 386BSD doesn't have the tell() system call
-                                 // neither do Solaris and Linux  -KMS
 #else
     return tell(fd);
 #endif
@@ -401,12 +341,11 @@ Tell(int fd)
 // 	Close a file.  Abort on error.
 //----------------------------------------------------------------------
 
-int 
+void 
 Close(int fd)
 {
     int retVal = close(fd);
     ASSERT(retVal >= 0); 
-    return retVal;
 }
 
 //----------------------------------------------------------------------
@@ -420,6 +359,7 @@ Unlink(char *name)
     return unlink(name);
 }
 
+#ifdef NETWORK
 //----------------------------------------------------------------------
 // OpenSocket
 // 	Open an interprocess communication (IPC) connection.  For now, 
@@ -510,62 +450,35 @@ void
 ReadFromSocket(int sockID, char *buffer, int packetSize)
 {
     int retVal;
+    extern int errno;
     struct sockaddr_un uName;
-#ifdef LINUX
-    socklen_t size = sizeof(uName);
-#else
     int size = sizeof(uName);
-#endif
    
     retVal = recvfrom(sockID, buffer, packetSize, 0,
-				   (struct sockaddr *) &uName, &size);
+				   (struct sockaddr *) &uName, (socklen_t *)&size);
 
     if (retVal != packetSize) {
         perror("in recvfrom");
-#if defined CYGWIN
-	cerr << "called with " << packetSize << ", got back " << retVal 
-						<< ", and " << "\n";
-#else 	
         cerr << "called with " << packetSize << ", got back " << retVal 
-						<< ", and " << errno << "\n";
-#endif 
+						<< ", and " <<  "\n";
     }
     ASSERT(retVal == packetSize);
 }
 
 //----------------------------------------------------------------------
-//    modified by KMS to add retry...
 // SendToSocket
 // 	Transmit a fixed size packet to another Nachos' IPC port.
-//	Try 10 times with a one second delay between attempts.
-//      This is useful, e.g., to give the other socket a chance
-//      to get set up.
-//      Terminate if we still fail after 10 tries.
+//	Abort on error.
 //----------------------------------------------------------------------
 void
 SendToSocket(int sockID, char *buffer, int packetSize, char *toName)
 {
     struct sockaddr_un uName;
     int retVal;
-    int retryCount;
 
     InitSocketName(&uName, toName);
-
-    for(retryCount=0;retryCount < 10;retryCount++) {
-      retVal = sendto(sockID, buffer, packetSize, 0, 
+    retVal = sendto(sockID, buffer, packetSize, 0, 
 			(struct sockaddr *) &uName, sizeof(uName));
-      if (retVal == packetSize) return;
-      // if we did not succeed, we should see a negative
-      // return value indicating complete failure.  If we
-      // don't, something fishy is going on...
-      ASSERT(retVal < 0);
-      // wait a second before trying again
-      Delay(1);
-    }
-    // At this point, we have failed many times
-    // The most common reason for this is that the target machine
-    // has halted and its socket no longer exists.
-    // We simply do nothing (drop the packet).
-    // This may mask other kinds of failures, but it is the
-    // right thing to do in the common case.
+    ASSERT(retVal == packetSize);
 }
+#endif

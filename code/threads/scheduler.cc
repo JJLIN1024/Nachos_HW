@@ -30,9 +30,10 @@
 //----------------------------------------------------------------------
 
 Scheduler::Scheduler()
-{ 
-    readyList = new List<Thread *>; 
-    toBeDestroyed = NULL;
+{
+//	schedulerType = type;
+	readyList = new List<Thread *>; 
+	toBeDestroyed = NULL;
 } 
 
 //----------------------------------------------------------------------
@@ -77,7 +78,7 @@ Scheduler::FindNextToRun ()
     ASSERT(kernel->interrupt->getLevel() == IntOff);
 
     if (readyList->IsEmpty()) {
-	    return NULL;
+	return NULL;
     } else {
     	return readyList->RemoveFront();
     }
@@ -89,7 +90,7 @@ Scheduler::FindNextToRun ()
 //	and load the state of the new thread, by calling the machine
 //	dependent context switch routine, SWITCH.
 //
-//      Note: we assume the state of the previously running thread has
+//  Note: we assume the state of the previously running thread has
 //	already been changed from running to blocked or ready (depending).
 // Side effect:
 //	The global variable kernel->currentThread becomes nextThread.
@@ -104,21 +105,25 @@ void
 Scheduler::Run (Thread *nextThread, bool finishing)
 {
     Thread *oldThread = kernel->currentThread;
-    
+ 
+//	cout << "Current Thread" <<oldThread->getName() << "    Next Thread"<<nextThread->getName()<<endl;
+   
     ASSERT(kernel->interrupt->getLevel() == IntOff);
 
     if (finishing) {	// mark that we need to delete current thread
-        ASSERT(toBeDestroyed == NULL);
-	    toBeDestroyed = oldThread;
+         ASSERT(toBeDestroyed == NULL);
+	 toBeDestroyed = oldThread;
     }
     
-    if (oldThread->space != NULL) {	// if this thread is a user program,
+#ifdef USER_PROGRAM			// ignore until running user programs 
+    if (oldThread->space != NULL) {	    // if this thread is a user program,
         oldThread->SaveUserState(); 	// save the user's CPU registers
-	    oldThread->space->SaveState();
+	oldThread->space->SaveState();
     }
+#endif
     
     oldThread->CheckOverflow();		    // check if the old thread
-					    // had an undetected stack overflow
+					                    // had an undetected stack overflow
 
     kernel->currentThread = nextThread;  // switch to the next thread
     nextThread->setStatus(RUNNING);      // nextThread is now running
@@ -143,10 +148,12 @@ Scheduler::Run (Thread *nextThread, bool finishing)
 					// before this one has finished
 					// and needs to be cleaned up
     
+#ifdef USER_PROGRAM
     if (oldThread->space != NULL) {	    // if there is an address space
         oldThread->RestoreUserState();     // to restore, do it.
-	    oldThread->space->RestoreState();
+	oldThread->space->RestoreState();
     }
+#endif
 }
 
 //----------------------------------------------------------------------
@@ -162,7 +169,7 @@ Scheduler::CheckToBeDestroyed()
 {
     if (toBeDestroyed != NULL) {
         delete toBeDestroyed;
-	    toBeDestroyed = NULL;
+	toBeDestroyed = NULL;
     }
 }
  

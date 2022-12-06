@@ -41,6 +41,9 @@ Alarm::Alarm(bool doRandom)
 //
 //	For now, just provide time-slicing.  Only need to time slice 
 //      if we're currently running something (in other words, not idle).
+//	Also, to keep from looping forever, we check if there's
+//	nothing on the ready list, and there are no other pending
+//	interrupts.  In this case, we can safely halt.
 //----------------------------------------------------------------------
 
 void 
@@ -49,7 +52,12 @@ Alarm::CallBack()
     Interrupt *interrupt = kernel->interrupt;
     MachineStatus status = interrupt->getStatus();
     
-    if (status != IdleMode) {
+    if (status == IdleMode) {	// is it time to quit?
+        if (!interrupt->AnyFutureInterrupts()) {
+	    timer->Disable();	// turn off the timer
+	}
+    } else {			// there's someone to preempt
 	interrupt->YieldOnReturn();
     }
 }
+

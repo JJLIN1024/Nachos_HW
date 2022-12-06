@@ -22,7 +22,9 @@
 //
 //	NOTE: this means that incorrectly synchronized code may work
 //	fine on this hardware simulation (even with randomized time slices),
-//	but it wouldn't work on real hardware.
+//	but it wouldn't work on real hardware.  (Just because we can't
+//	always detect when your program would fail in real life, does not 
+//	mean it's ok to write incorrectly synchronized code!)
 //
 //  DO NOT CHANGE -- part of the machine emulation
 //
@@ -49,7 +51,7 @@ enum MachineStatus {IdleMode, SystemMode, UserMode};
 // In Nachos, we support a hardware timer device, a disk, a console
 // display and keyboard, and a network.
 enum IntType { TimerInt, DiskInt, ConsoleWriteInt, ConsoleReadInt, 
-			NetworkSendInt, NetworkRecvInt};
+			ElevatorInt, NetworkSendInt, NetworkRecvInt};
 
 // The following class defines an interrupt that is scheduled
 // to occur in the future.  The internal data structures are
@@ -100,6 +102,9 @@ class Interrupt {
     MachineStatus getStatus() { return status; } 
     void setStatus(MachineStatus st) { status = st; }
         			// idle, kernel, user
+
+    bool AnyFutureInterrupts() { return !pending->IsEmpty(); }
+    				// are any interrupts scheduled?
 
     void DumpState();		// Print interrupt state
     

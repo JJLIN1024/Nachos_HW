@@ -43,7 +43,8 @@ class SynchList {
     
     // these are only to assist SelfTest()
     SynchList<T> *selfTestPing;
-    static void SelfTestHelper(void* data);
+    void SelfTestHelper();
+    static void SelfTestHelper_st( SynchList<T> *); // static member function for thread->Fork()
 };
 
 #include "synchlist.cc"

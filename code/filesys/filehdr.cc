@@ -23,11 +23,9 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
-
-#include "filehdr.h"
 #include "debug.h"
-#include "synchdisk.h"
 #include "main.h"
+#include "filehdr.h"
 
 //----------------------------------------------------------------------
 // FileHeader::Allocate
@@ -41,19 +39,15 @@
 //----------------------------------------------------------------------
 
 bool
-FileHeader::Allocate(PersistentBitmap *freeMap, int fileSize)
+FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
     if (freeMap->NumClear() < numSectors)
 	return FALSE;		// not enough space
 
-    for (int i = 0; i < numSectors; i++) {
+    for (int i = 0; i < numSectors; i++)
 	dataSectors[i] = freeMap->FindAndSet();
-	// since we checked that there was enough free space,
-	// we expect this to succeed
-	ASSERT(dataSectors[i] >= 0);
-    }
     return TRUE;
 }
 
@@ -65,7 +59,7 @@ FileHeader::Allocate(PersistentBitmap *freeMap, int fileSize)
 //----------------------------------------------------------------------
 
 void 
-FileHeader::Deallocate(PersistentBitmap *freeMap)
+FileHeader::Deallocate(BitMap *freeMap)
 {
     for (int i = 0; i < numSectors; i++) {
 	ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!

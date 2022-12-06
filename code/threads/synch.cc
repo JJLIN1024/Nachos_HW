@@ -62,6 +62,11 @@ Semaphore::~Semaphore()
     delete queue;
 }
 
+char*
+Semaphore::getName()
+{
+	return name;
+}
 //----------------------------------------------------------------------
 // Semaphore::P
 // 	Wait until semaphore value > 0, then decrement.  Checking the
@@ -171,6 +176,11 @@ Lock::~Lock()
     delete semaphore;
 }
 
+char*
+Lock::getName()
+{
+	return name;
+}
 //----------------------------------------------------------------------
 // Lock::Acquire
 //	Atomically wait until the lock is free, then set it to busy.
@@ -202,6 +212,11 @@ void Lock::Release()
     semaphore->V();
 }
 
+bool
+Lock::IsHeldByCurrentThread()
+{
+	return lockHolder == kernel->currentThread;
+}
 //----------------------------------------------------------------------
 // Condition::Condition
 // 	Initialize a condition variable, so that it can be 
@@ -226,6 +241,11 @@ Condition::~Condition()
     delete waitQueue;
 }
 
+char*
+Condition::getName()
+{
+	return name;
+}
 //----------------------------------------------------------------------
 // Condition::Wait
 // 	Atomically release monitor lock and go to sleep.

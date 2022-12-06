@@ -49,14 +49,12 @@ List<T>::List()
 //----------------------------------------------------------------------
 // List<T>::~List
 //	Prepare a list for deallocation.  
-//      This does *NOT* free list elements, nor does it
-//      free the data those elements point to.
-//      Normally, the list should be empty when this is called.
 //----------------------------------------------------------------------
 
 template <class T>
 List<T>::~List()
 { 
+    ASSERT(IsEmpty());		// make sure list is empty
 }
 
 //----------------------------------------------------------------------

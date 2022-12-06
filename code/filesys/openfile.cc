@@ -11,12 +11,13 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 #ifndef FILESYS_STUB
+#ifdef FILESYS
 
 #include "copyright.h"
-#include "main.h"
 #include "filehdr.h"
 #include "openfile.h"
-#include "synchdisk.h"
+#include "debug.h"
+#include "main.h"
 
 //----------------------------------------------------------------------
 // OpenFile::OpenFile
@@ -192,5 +193,5 @@ OpenFile::Length()
 { 
     return hdr->FileLength(); 
 }
-
+#endif //FILESYS
 #endif //FILESYS_STUB

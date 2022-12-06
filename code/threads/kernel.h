@@ -16,61 +16,35 @@
 #include "interrupt.h"
 #include "stats.h"
 #include "alarm.h"
-#include "filesys.h"
-#include "machine.h"
 
-class PostOfficeInput;
-class PostOfficeOutput;
-class SynchConsoleInput;
-class SynchConsoleOutput;
-class SynchDisk;
-
-class Kernel {
+class ThreadedKernel {
   public:
-    Kernel(int argc, char **argv);
+    ThreadedKernel(int argc, char **argv);
     				// Interpret command line arguments
-    ~Kernel();		        // deallocate the kernel
+    ~ThreadedKernel();		// deallocate the kernel
     
     void Initialize(); 		// initialize the kernel -- separated
 				// from constructor because 
 				// refers to "kernel" as a global
 
-    void ThreadSelfTest();	// self test of threads and synchronization
-
-    void ConsoleTest();         // interactive console self test
-
-    void NetworkTest();         // interactive 2-machine network test
+    void Run();			// do kernel stuff
+				    
+    void SelfTest();		// test whether kernel is working
     
 // These are public for notational convenience; really, 
-// they're global variables used everywhere.
+// they're global variables used everywhere.  Putting them into 
+// a class makes it easier to support multiple kernels, when we
+// get to the networking assignment.
 
     Thread *currentThread;	// the thread holding the CPU
     Scheduler *scheduler;	// the ready list
     Interrupt *interrupt;	// interrupt status
     Statistics *stats;		// performance metrics
     Alarm *alarm;		// the software alarm clock    
-    Machine *machine;           // the simulated CPU
-    SynchConsoleInput *synchConsoleIn;
-    SynchConsoleOutput *synchConsoleOut;
-    SynchDisk *synchDisk;
-    FileSystem *fileSystem;     
-    PostOfficeInput *postOfficeIn;
-    PostOfficeOutput *postOfficeOut;
-
-    int hostName;               // machine identifier
 
   private:
     bool randomSlice;		// enable pseudo-random time slicing
-    bool debugUserProg;         // single step user program
-    double reliability;         // likelihood messages are dropped
-    char *consoleIn;            // file to read console input from
-    char *consoleOut;           // file to send console output to
-#ifndef FILESYS_STUB
-    bool formatFlag;          // format the disk if this is true
-#endif
 };
 
 
 #endif // KERNEL_H
-
-

@@ -4,7 +4,7 @@
 //	The debugging routines allow the user to turn on selected
 //	debugging messages, controllable from the command line arguments
 //	passed to Nachos (-d).  You are encouraged to add your own
-//	debugging flags.  Please.... 
+//	debugging flags.  
 //
 // Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
@@ -23,12 +23,11 @@ const char dbgAll = '+';		// turn on all debug messages
 const char dbgThread = 't';		// threads
 const char dbgSynch = 's';		// locks, semaphores, condition vars
 const char dbgInt = 'i'; 		// interrupt emulation
-const char dbgMach = 'm'; 		// machine emulation
-const char dbgDisk = 'd'; 		// disk emulation
-const char dbgFile = 'f'; 		// file system
-const char dbgAddr = 'a'; 		// address spaces
-const char dbgNet = 'n'; 		// network emulation
-const char dbgSys = 'u';                // systemcall
+const char dbgMach = 'm'; 		// machine emulation (USER_PROGRAM)
+const char dbgDisk = 'd'; 		// disk emulation (FILESYS)
+const char dbgFile = 'f'; 		// file system (FILESYS)
+const char dbgAddr = 'a'; 		// address spaces (USER_PROGRAM)
+const char dbgNet = 'n'; 		// network emulation (NETWORK)
 
 class Debug {
   public:
@@ -83,14 +82,4 @@ extern Debug *debug;
         Abort();                                                              \
     }
 
-//----------------------------------------------------------------------
-// ASSERTUNIMPLEMENTED
-//     Print a message that unimplemented code is executed and dump core
-//----------------------------------------------------------------------
-#define UNIMPLEMENTED()                                                      \
-{                                                                            \
-  cerr << "Reached UNIMPLEMENTED function " << __FUNCTION__ << " in file: "  \
-       << __FILE__ << " line: " << __LINE__ << ".\n";                        \
-}
-
-#endif // DEBUG_H
+#endif //DEBUG_H

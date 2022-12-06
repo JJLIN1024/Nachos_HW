@@ -12,4 +12,4 @@
 
 extern void LibSelfTest();
 
-#endif // LIBTEST_H
+#endif //MAIN_H

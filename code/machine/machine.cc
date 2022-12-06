@@ -55,6 +55,8 @@ void CheckEndian()
 Machine::Machine(bool debug)
 {
     int i;
+    for(i=0;i<NumPhysPages;i++)
+		PhyPageStatus[i]=FALSE;
 
     for (i = 0; i < NumTotalRegs; i++)
         registers[i] = 0;
@@ -105,8 +107,10 @@ Machine::RaiseException(ExceptionType which, int badVAddr)
     registers[BadVAddrReg] = badVAddr;
     DelayedLoad(0, 0);			// finish anything in progress
     kernel->interrupt->setStatus(SystemMode);
+//	cout << "entering system mode...\n";
     ExceptionHandler(which);		// interrupts are enabled at this point
     kernel->interrupt->setStatus(UserMode);
+//	cout << "entering user mode...\n";
 }
 
 //----------------------------------------------------------------------
@@ -123,45 +127,31 @@ void Machine::Debugger()
 {
     char *buf = new char[80];
     int num;
-    bool done = FALSE;
 
     kernel->interrupt->DumpState();
     DumpState();
-    while (!done) {
-      // read commands until we should proceed with more execution
-      // prompt for input, giving current simulation time in the prompt
-      cout << kernel->stats->totalTicks << ">";
-      // read one line of input (80 chars max)
-      cin.get(buf, 80);
-      if (sscanf(buf, "%d", &num) == 1) {
+    cout << kernel->stats->totalTicks << ">";
+    cin.get(buf, 80, '\n');
+    if (sscanf(buf, "%d", &num) == 1)
 	runUntilTime = num;
-	done = TRUE;
-      }
-      else {
+    else {
 	runUntilTime = 0;
 	switch (*buf) {
-	case '\0':
-	  done = TRUE;
-	  break;
-	case 'c':
-	  singleStep = FALSE;
-	  done = TRUE;
-	  break;
-	case '?':
-	  cout << "Machine commands:\n";
-	  cout << "    <return>  execute one instruction\n";
-	  cout << "    <number>  run until the given timer tick\n";
-	  cout << "    c         run until completion\n";
-	  cout << "    ?         print help message\n";
-	  break;
-	default:
-	  cout << "Unknown command: " << buf << "\n";
-	  cout << "Type ? for help.\n";
+	  case '\n':
+	    break;
+	    
+	  case 'c':
+	    singleStep = FALSE;
+	    break;
+	    
+	  case '?':
+	    cout << "Machine commands:\n";
+	    cout << "    <return>  execute one instruction\n";
+	    cout << "    <number>  run until the given timer tick\n";
+	    cout << "    c         run until completion\n";
+	    cout << "    ?         print help message\n";
+	    break;
 	}
-      }
-      // consume the newline delimiter, which does not get
-      // eaten by cin.get(buf,80) above.
-      buf[0] = cin.get();
     }
     delete [] buf;
 }

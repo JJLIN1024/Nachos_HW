@@ -12,18 +12,16 @@
 #define SYSDEP_H
 
 #include "copyright.h"
-#include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-using namespace std;
+#include "iostream"
+using namespace::std;
+#include "stdlib.h"
+#include "stdio.h"
+#include "string.h"
 
 // Process control: abort, exit, and sleep
 extern void Abort();
 extern void Exit(int exitCode);
 extern void Delay(int seconds);
-extern void UDelay(unsigned int usec);// rcgood - to avoid spinners.
 
 // Initialize system so that cleanUp routine is called when user hits ctl-C
 extern void CallOnUserAbort(void (*cleanup)(int));
@@ -50,7 +48,7 @@ extern int ReadPartial(int fd, char *buffer, int nBytes);
 extern void WriteFile(int fd, char *buffer, int nBytes);
 extern void Lseek(int fd, int offset, int whence);
 extern int Tell(int fd);
-extern int Close(int fd);
+extern void Close(int fd);
 extern bool Unlink(char *name);
 
 // Other C library routines that are used by Nachos.
@@ -59,10 +57,9 @@ extern "C" {
 int atoi(const char *str);
 double atof(const char *str);
 int abs(int i);
-void bcopy(const void *s1, void *s2, size_t n);
-void bzero(void *s, size_t n);
 }
 
+#ifdef NETWORK
 // Interprocess communication operations, for simulating the network
 extern int OpenSocket();
 extern void CloseSocket(int sockID);
@@ -71,5 +68,6 @@ extern void DeAssignNameToSocket(char *socketName);
 extern bool PollSocket(int sockID);
 extern void ReadFromSocket(int sockID, char *buffer, int packetSize);
 extern void SendToSocket(int sockID, char *buffer, int packetSize,char *toName);
+#endif
 
 #endif // SYSDEP_H

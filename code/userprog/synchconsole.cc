@@ -47,33 +47,11 @@ SynchConsoleInput::GetChar()
     char ch;
 
     lock->Acquire();
-    waitFor->P();	// wait for EOF or a char to be available.
-    ch = consoleInput->GetChar();
+    while ((ch = consoleInput->GetChar()) == EOF) {
+    	waitFor->P();
+    }
     lock->Release();
     return ch;
-}
-
-int SynchConsoleInput::Read(char* s, int length) {
-    int numBytesRead = 0;
-    char ch;
-    
-    lock->Acquire();
-
-    while (numBytesRead < length) {
-        waitFor->P();
-        ch = consoleInput->GetChar();
-
-        if (ch == '\n')
-            break;
-        else {
-            s[numBytesRead] = ch;
-            ++numBytesRead;
-        }
-    }
-
-    lock->Release();
-
-    return numBytesRead;
 }
 
 //----------------------------------------------------------------------
@@ -126,19 +104,6 @@ SynchConsoleOutput::PutChar(char ch)
     lock->Acquire();
     consoleOutput->PutChar(ch);
     waitFor->P();
-    lock->Release();
-}
-
-void SynchConsoleOutput::Print(char* s) {
-    lock->Acquire();
-
-    int i = 0;
-    while (s[i] != '\0') {
-        consoleOutput->PutChar(s[i]);
-        waitFor->P();
-        ++i;
-    } 
-
     lock->Release();
 }
 

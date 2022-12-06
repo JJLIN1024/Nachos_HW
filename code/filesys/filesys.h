@@ -11,7 +11,9 @@
 //	We define two separate implementations of the file system. 
 //	The "STUB" version just re-defines the Nachos file system 
 //	operations as operations on the native UNIX file system on the machine
-//	running the Nachos simulation.
+//	running the Nachos simulation.  This is provided in case the
+//	multiprogramming and virtual memory assignments (which make use
+//	of the file system) are done before the file system assignment.
 //
 //	The other version is a "real" file system, built on top of 
 //	a disk simulator.  The disk is simulated using the native UNIX 
@@ -34,44 +36,55 @@
 #define FS_H
 
 #include "copyright.h"
-#include "sysdep.h"
 #include "openfile.h"
 
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
-				// calls to UNIX, until the real file system
-				// implementation is available
+							// calls to UNIX, until the real file system
+							// implementation is available
 class FileSystem {
   public:
-    FileSystem() {}
+    FileSystem(bool format=true) {}
 
-    bool Create(char *name, int initialSize) {
-	int fileDescriptor = OpenForWrite(name);
+    bool Create(char *name) { 
+		int fileDescriptor = OpenForWrite(name);
 
-	if (fileDescriptor == -1) return FALSE;
-	Close(fileDescriptor); 
-	return TRUE; 
+		if (fileDescriptor == -1) return FALSE;
+		Close(fileDescriptor); 
+		return TRUE; 
 	}
 
     OpenFile* Open(char *name) {
-	  int fileDescriptor = OpenForReadWrite(name, FALSE);
+		  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
-	  if (fileDescriptor == -1) return NULL;
-	  return new OpenFile(fileDescriptor);
-      }
+		  if (fileDescriptor == -1) return NULL;
+		  return new OpenFile(fileDescriptor);
+    }
 
     bool Remove(char *name) { return Unlink(name) == 0; }
 
+	
+	//<TODO
+	/*The OpenAFile function is used for kernel open system call
+	
+	OpenFile* filePtr;	//you need to use this filePtr to manage the current file
+
+	int OpenAFile(char *name);
+	int WriteFile(char *buffer, int size);
+	int ReadFile(char *buffer, int size);
+	int CloseFile();
+	*/
+	//TODO>
 };
 
 #else // FILESYS
 class FileSystem {
   public:
-    FileSystem(bool format);		// Initialize the file system.
-					// Must be called *after* "synchDisk" 
-					// has been initialized.
-    					// If "format", there is nothing on
-					// the disk, so initialize the directory
-    					// and the bitmap of free blocks.
+    FileSystem(bool format=true);		// Initialize the file system.
+										// Must be called *after* "synchDisk" 
+										// has been initialized.
+										// If "format", there is nothing on
+										// the disk, so initialize the directory
+										// and the bitmap of free blocks.
 
     bool Create(char *name, int initialSize);  	
 					// Create a file (UNIX creat)

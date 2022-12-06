@@ -18,7 +18,7 @@
 //	"numItems" is the number of bits in the bitmap.
 //----------------------------------------------------------------------
 
-Bitmap::Bitmap(int numItems) 
+BitMap::BitMap(int numItems) 
 { 
     int i;
 
@@ -36,24 +36,24 @@ Bitmap::Bitmap(int numItems)
 }
 
 //----------------------------------------------------------------------
-// Bitmap::~Bitmap
+// BitMap::~BitMap
 // 	De-allocate a bitmap.
 //----------------------------------------------------------------------
 
-Bitmap::~Bitmap()
+BitMap::~BitMap()
 { 
     delete map;
 }
 
 //----------------------------------------------------------------------
-// Bitmap::Set
+// BitMap::Set
 // 	Set the "nth" bit in a bitmap.
 //
 //	"which" is the number of the bit to be set.
 //----------------------------------------------------------------------
 
 void
-Bitmap::Mark(int which) 
+BitMap::Mark(int which) 
 { 
     ASSERT(which >= 0 && which < numBits);
 
@@ -63,14 +63,14 @@ Bitmap::Mark(int which)
 }
     
 //----------------------------------------------------------------------
-// Bitmap::Clear
+// BitMap::Clear
 // 	Clear the "nth" bit in a bitmap.
 //
 //	"which" is the number of the bit to be cleared.
 //----------------------------------------------------------------------
 
 void 
-Bitmap::Clear(int which) 
+BitMap::Clear(int which) 
 {
     ASSERT(which >= 0 && which < numBits);
 
@@ -80,14 +80,14 @@ Bitmap::Clear(int which)
 }
 
 //----------------------------------------------------------------------
-// Bitmap::Test
+// BitMap::Test
 // 	Return TRUE if the "nth" bit is set.
 //
 //	"which" is the number of the bit to be tested.
 //----------------------------------------------------------------------
 
 bool 
-Bitmap::Test(int which) const
+BitMap::Test(int which) const
 {
     ASSERT(which >= 0 && which < numBits);
     
@@ -99,7 +99,7 @@ Bitmap::Test(int which) const
 }
 
 //----------------------------------------------------------------------
-// Bitmap::FindAndSet
+// BitMap::FindAndSet
 // 	Return the number of the first bit which is clear.
 //	As a side effect, set the bit (mark it as in use).
 //	(In other words, find and allocate a bit.)
@@ -108,7 +108,7 @@ Bitmap::Test(int which) const
 //----------------------------------------------------------------------
 
 int 
-Bitmap::FindAndSet() 
+BitMap::FindAndSet() 
 {
     for (int i = 0; i < numBits; i++) {
 	if (!Test(i)) {
@@ -120,13 +120,13 @@ Bitmap::FindAndSet()
 }
 
 //----------------------------------------------------------------------
-// Bitmap::NumClear
+// BitMap::NumClear
 // 	Return the number of clear bits in the bitmap.
 //	(In other words, how many bits are unallocated?)
 //----------------------------------------------------------------------
 
 int 
-Bitmap::NumClear() const
+BitMap::NumClear() const
 {
     int count = 0;
 
@@ -139,7 +139,7 @@ Bitmap::NumClear() const
 }
 
 //----------------------------------------------------------------------
-// Bitmap::Print
+// BitMap::Print
 // 	Print the contents of the bitmap, for debugging.
 //
 //	Could be done in a number of ways, but we just print the #'s of
@@ -147,9 +147,9 @@ Bitmap::NumClear() const
 //----------------------------------------------------------------------
 
 void
-Bitmap::Print() const
+BitMap::Print() const
 {
-    cout << "Bitmap set:\n"; 
+    cout << "BitMap set:\n"; 
     for (int i = 0; i < numBits; i++) {
 	if (Test(i)) {
 	    cout << i << ", ";
@@ -160,12 +160,12 @@ Bitmap::Print() const
 
 
 //----------------------------------------------------------------------
-// Bitmap::SelfTest
+// BitMap::SelfTest
 // 	Test whether this module is working.
 //----------------------------------------------------------------------
 
 void
-Bitmap::SelfTest() 
+BitMap::SelfTest() 
 {
     int i;
     

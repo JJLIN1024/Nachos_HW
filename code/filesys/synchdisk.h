@@ -6,11 +6,10 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
-#include "copyright.h"
-
 #ifndef SYNCHDISK_H
 #define SYNCHDISK_H
 
+#include "copyright.h"
 #include "disk.h"
 #include "synch.h"
 #include "callback.h"
@@ -25,10 +24,11 @@
 // This class provides the abstraction that for any individual thread
 // making a request, it waits around until the operation finishes before
 // returning.
-
+class Semaphore;
+class Lock;
 class SynchDisk : public CallBackObj {
   public:
-    SynchDisk();    		        // Initialize a synchronous disk,
+    SynchDisk(char* name);    		// Initialize a synchronous disk,
 					// by initializing the raw Disk.
     ~SynchDisk();			// De-allocate the synch disk data
     

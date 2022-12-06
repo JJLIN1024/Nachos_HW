@@ -1,101 +1,32 @@
-//Sort program
+/* sort.c 
+ *    Test program to sort a large number of integers.
+ *
+ *    Intention is to stress virtual memory system.
+ *
+ *    Ideally, we could read the unsorted array off of the file system,
+ *	and store the result back to the file system!
+ */
 
 #include "syscall.h"
 
-#define SIZE (100)
+int A[1024];	/* size of physical memory; with code, we'll run out of space!*/
 
-int A[SIZE];
-
-int sortAscending(int a, int b)
+int
+main()
 {
-    if (a > b)
-        return 1;
-    return 0;
-}
+    int i, j, tmp;
 
-int sortDescending(int a, int b)
-{
-    if (a < b)
-        return 1;
-    return 0;
-}
+    /* first initialize the array, in reverse sorted order */
+    for (i = 0; i < 1024; i++)		
+        A[i] = 1024 - i;
 
-void bubbleSort(int a[], int n, int (*sortOrder)(int, int))
-{
-    int i, j, temp;
-    for (i = 0; i < n; i++)
-    {
-        for (j = 0; j < n - 1; j++)
-        {
-            if (sortOrder(a[j], a[j + 1]) == 1)
-            {
-                temp = a[j];
-                a[j] = a[j + 1];
-                a[j + 1] = temp;
-            }
-        }
-    }
-}
-
-int main()
-{
-    int i, j, n, type;
-
-    PrintString("Input number of elements (<= 100): ");
-
-    n = ReadNum();
-    if (n > 100 || n <= 0)
-    {
-        PrintString("Invalid number of elements.\n");
-        Halt();
-    }
-    PrintString("\n");
-    for (i = 0; i < n; i++)
-    {
-        PrintString("Input element #");
-        PrintNum(i + 1);
-        PrintString(": ");
-        A[i] = ReadNum();
-
-        //2000000001 is the error case of system call SC_ReadNum
-        if (A[i] == 2000000001)
-        {
-            PrintString("Invalid number.\n");
-            Halt();
-        }
-        PrintString("\n");
-    }
-
-    while (1)
-    {
-        PrintString("Input type of sort order (1: ascending, 2: descending): ");
-        type = ReadNum();
-        PrintChar('\n');
-
-        //2000000001 is the error case of system call SC_ReadNum
-        if (type == 2000000001)
-        {
-            PrintString("Invalid number.\n");
-            Halt();
-        }
-
-        //Check invalid type of sort order
-        if (type == 1 || type == 2)
-            break;
-    }
-
-    if (type == 1)
-        bubbleSort(A, n, sortAscending);
-    else
-        bubbleSort(A, n, sortDescending);
-
-    for (j = 0; j < n; j++)
-    {
-        PrintNum(A[j]);
-        PrintString(" ");
-    }
-
-    PrintString("\n");
-
-    Halt();
+    /* then sort! */
+    for (i = 0; i < 1023; i++)
+        for (j = i; j < (1023 - i); j++)
+	   if (A[j] > A[j + 1]) {	/* out of order -> need to swap ! */
+	      tmp = A[j];
+	      A[j] = A[j + 1];
+	      A[j + 1] = tmp;
+    	   }
+    Exit(A[0]);		/* and then we're done -- should be 0! */
 }

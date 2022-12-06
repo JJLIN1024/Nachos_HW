@@ -41,8 +41,10 @@
 #include "utility.h"
 #include "sysdep.h"
 
+#ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
+#endif
 
 // CPU register state to be saved on context switch.  
 // The x86 needs to save only a few registers, 
@@ -56,7 +58,7 @@
 
 // Size of the thread's private execution stack.
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
-const int StackSize = (8 * 1024);	// in words
+const int StackSize = (4 * 1024);	// in words
 
 
 // Thread state
@@ -104,10 +106,8 @@ class Thread {
     char* getName() { return (name); }
     void Print() { cout << name; }
     void SelfTest();		// test whether thread impl is working
-    void MyExec(char *userProgName);
-	int pId;
 
-private:
+  private:
     // some of the private data for this class is listed above
     
     int *stack; 	 	// Bottom of the stack 
@@ -120,6 +120,7 @@ private:
     				// Allocate a stack for thread.
 				// Used internally by Fork()
 
+#ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 
 // one for its state while executing user code, one for its state 
 // while executing kernel code.
@@ -131,6 +132,7 @@ private:
     void RestoreUserState();		// restore user-level register state
 
     AddrSpace *space;			// User code this thread is running.
+#endif
 };
 
 // external function, dummy routine whose sole job is to call Thread::Print
@@ -140,7 +142,7 @@ extern void ThreadPrint(Thread *thread);
 
 extern "C" {
 // First frame on thread execution stack; 
-//   	call ThreadBegin
+//  call ThreadBegin
 //	call "func"
 //	(when func returns, if ever) call ThreadFinish()
 void ThreadRoot();

@@ -14,37 +14,21 @@
 #define SYSCALLS_H
 
 #include "copyright.h"
-#include "errno.h"
+
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
  */
-#define SC_Halt 0
-#define SC_Exit 1
-#define SC_Exec 2
-#define SC_Join 3
-#define SC_Create 4
-#define SC_Remove 5
-#define SC_Open 6
-#define SC_Read 7
-#define SC_Write 8
-#define SC_Seek 9
-#define SC_Close 10
-#define SC_ThreadFork 11
-#define SC_ThreadYield 12
-#define SC_ExecV 13
-#define SC_ThreadExit 14
-#define SC_ThreadJoin 15
-
-//Define macro for custom system call
-#define SC_ReadNum 16
-#define SC_PrintNum 17
-#define SC_ReadChar 18
-#define SC_PrintChar 19
-#define SC_ReadString 20
-#define SC_PrintString 21
-#define SC_RandomNum 22
-#define SC_Add 42
-//End-------------------------------------
+#define SC_Halt		0
+#define SC_Exit		1
+#define SC_Exec		2
+#define SC_Join		3
+#define SC_Create	4
+//<TODO
+//TODO>
+#define SC_ThreadFork	9
+#define SC_ThreadYield	10
+#define SC_PrintInt	11
+#define SC_Msg	12
 
 #ifndef IN_ASM
 
@@ -59,52 +43,39 @@
  */
 
 /* Stop Nachos, and print out performance stats */
-void Halt();
+void Halt();		
+ 
 
-/*
- * Add the two operants and return the result
- */
-
-int Add(int op1, int op2);
-
-/* Address space control operations: Exit, Exec, Execv, and Join */
+/* Address space control operations: Exit, Exec, and Join */
 
 /* This user program is done (status = 0 means exited normally). */
-void Exit(int status);
+void Exit(int status);	
 
 /* A unique identifier for an executing user program (address space) */
-typedef int SpaceId;
-
-/* A unique identifier for a thread within a task */
-typedef int ThreadId;
-
-/* Run the specified executable, with no args */
-/* This can be implemented as a call to ExecV.
- */
-SpaceId Exec(char *exec_name);
-
-/* Run the executable, stored in the Nachos file "argv[0]", with
- * parameters stored in argv[1..argc-1] and return the 
+typedef int SpaceId;	
+ 
+/* Run the executable, stored in the Nachos file "name", and return the 
  * address space identifier
  */
-SpaceId ExecV(int argc, char *argv[]);
-
-/* Only return once the user program "id" has finished.  
+SpaceId Exec(char *name);
+ 
+/* Only return once the the user program "id" has finished.  
  * Return the exit status.
  */
-int Join(SpaceId id);
+int Join(SpaceId id); 	
+ 
 
-/* File system operations: Create, Remove, Open, Read, Write, Close
+/* File system operations: Create, Open, Read, Write, Close
  * These functions are patterned after UNIX -- files represent
  * both files *and* hardware I/O devices.
  *
- * Note that the Nachos file system has a stub implementation, which
- * can be used to support these system calls if the regular Nachos
- * file system has not been implemented.
+ * If this assignment is done before doing the file system assignment,
+ * note that the Nachos file system has a stub implementation, which
+ * will work for the purposes of testing out these routines.
  */
-
+ 
 /* A unique identifier for an open Nachos file. */
-typedef int OpenFileId;
+typedef int OpenFileId;	
 
 /* when an address space starts up, it has two open files, representing 
  * keyboard input and display output (in UNIX terms, stdin and stdout).
@@ -112,27 +83,21 @@ typedef int OpenFileId;
  * the console device.
  */
 
-#define ConsoleInput 0
-#define ConsoleOutput 1
+#define ConsoleInput	0  
+#define ConsoleOutput	1  
+ 
+/* Just for simply showing message, not a safe way for console IO */
+void Msg(char *msg);
 
-/* Create a Nachos file, with name "name" */
-/* Note: Create does not open the file.   */
-/* Return 1 on success, negative error code on failure */
+/* Create a Nachos file, with "name" */
 int Create(char *name);
 
-/* Remove a Nachos file, with name "name" */
-int Remove(char *name);
-
+//<TODO
 /* Open the Nachos file "name", and return an "OpenFileId" that can 
  * be used to read and write to the file.
  */
-OpenFileId Open(char *name);
 
-/* Write "size" bytes from "buffer" to the open file. 
- * Return the number of bytes actually read on success.
- * On failure, a negative error code is returned.
- */
-int Write(char *buffer, int size, OpenFileId id);
+/* Write "size" bytes from "buffer" to the open file. */
 
 /* Read "size" bytes from the open file into "buffer".  
  * Return the number of bytes actually read -- if the open file isn't
@@ -140,17 +105,10 @@ int Write(char *buffer, int size, OpenFileId id);
  * characters to read, return whatever is available (for I/O devices, 
  * you should always wait until you can return at least one character).
  */
-int Read(char *buffer, int size, OpenFileId id);
 
-/* Set the seek position of the open file "id"
- * to the byte "position".
- */
-int Seek(int position, OpenFileId id);
+/* Close the file, we're done reading and writing to it. */
 
-/* Close the file, we're done reading and writing to it.
- * Return 1 on success, negative error code on failure
- */
-int Close(OpenFileId id);
+//TODO>
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program. 
@@ -160,39 +118,15 @@ int Close(OpenFileId id);
 
 /* Fork a thread to run a procedure ("func") in the *same* address space 
  * as the current thread.
- * Return a positive ThreadId on success, negative error code on failure
  */
-ThreadId ThreadFork(void (*func)());
+void ThreadFork(void (*func)());
 
 /* Yield the CPU to another runnable thread, whether in this address space 
  * or not. 
  */
-void ThreadYield();
+void ThreadYield();		
 
-/*
- * Blocks current thread until lokal thread ThreadID exits with ThreadExit.
- * Function returns the ExitCode of ThreadExit() of the exiting thread.
- */
-int ThreadJoin(ThreadId id);
-
-/*
- * Deletes current thread and returns ExitCode to every waiting lokal thread.
- */
-void ThreadExit(int ExitCode);
-
-//Custom system call
-
-int ReadNum();
-void PrintNum(int num);
-
-char ReadChar();
-void PrintChar(char ch);
-
-void ReadString(char buffer[], int length);
-void PrintString(char buffer[]);
-
-void RandomNum();
-
+void PrintInt(int number);	//my System Call
 #endif /* IN_ASM */
 
 #endif /* SYSCALL_H */

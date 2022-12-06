@@ -50,30 +50,6 @@ Halt:
 	j	$31
 	.end Halt
 
-	.globl Add
-	.ent	Add
-Add:
-	addiu $2,$0,SC_Add
-	syscall
-	j 	$31
-	.end Add
-
-	.globl ReadNum
-	.ent	ReadNum
-ReadNum:
-	addiu $2,$0,SC_ReadNum
-	syscall
-	j 	$31
-	.end ReadNum
-
-	.globl PrintNum
-	.ent	PrintNum
-PrintNum:
-	addiu $2,$0,SC_PrintNum
-	syscall
-	j 	$31
-	.end PrintNum
-
 	.globl Exit
 	.ent	Exit
 Exit:
@@ -89,14 +65,6 @@ Exec:
 	syscall
 	j	$31
 	.end Exec
-
-	.globl ExecV
-	.ent	ExecV
-ExecV:
-	addiu $2,$0,SC_ExecV
-	syscall
-	j	$31
-	.end ExecV
 
 	.globl Join
 	.ent	Join
@@ -114,93 +82,17 @@ Create:
 	j	$31
 	.end Create
 
-	.globl ReadChar
-	.ent	ReadChar
-ReadChar:
-	addiu $2,$0,SC_ReadChar
+	.globl Msg
+	.ent	Msg
+Msg:
+	addiu $2,$0,SC_Msg
 	syscall
 	j	$31
-	.end ReadChar
+	.end Msg
 
-	.globl PrintChar
-	.ent	PrintChar
-PrintChar:
-	addiu $2,$0,SC_PrintChar
-	syscall
-	j	$31
-	.end PrintChar
-
-	.globl Remove
-	.ent	Remove
-Remove:
-	addiu $2,$0,SC_Remove
-	syscall
-	j	$31
-	.end Remove
-
-	.globl Open
-	.ent	Open
-Open:
-	addiu $2,$0,SC_Open
-	syscall
-	j	$31
-	.end Open
-
-	.globl Read
-	.ent	Read
-Read:
-	addiu $2,$0,SC_Read
-	syscall
-	j	$31
-	.end Read
-
-	.globl Write
-	.ent	Write
-Write:
-	addiu $2,$0,SC_Write
-	syscall
-	j	$31
-	.end Write
-
-	.globl ReadString
-	.ent	ReadString
-ReadString:
-	addiu $2,$0,SC_ReadString
-	syscall
-	j	$31
-	.end ReadString
-
-	.globl PrintString
-	.ent	PrintString
-PrintString:
-	addiu $2,$0,SC_PrintString
-	syscall
-	j	$31
-	.end PrintString
-
-	.globl RandomNum
-	.ent	RandomNum
-RandomNum:
-	addiu $2,$0,SC_RandomNum
-	syscall
-	j	$31
-	.end RandomNum
-
-	.globl Close
-	.ent	Close
-Close:
-	addiu $2,$0,SC_Close
-	syscall
-	j	$31
-	.end Close
-
-	.globl Seek
-	.ent	Seek
-Seek:
-	addiu $2,$0,SC_Seek
-	syscall
-	j	$31
-	.end Seek
+//<TODO
+	
+//TODO>
 
         .globl ThreadFork
         .ent    ThreadFork
@@ -218,22 +110,14 @@ ThreadYield:
         j       $31
         .end ThreadYield
 
-	.globl ThreadExit
-	.ent    ThreadExit
-ThreadExit:
-	addiu $2, $0, SC_ThreadExit
+	.globl  PrintInt
+	.ent    PrintInt
+PrintInt:
+	addiu   $2,$0,SC_PrintInt
 	syscall
-	j 	$31
-	.end ThreadExit
+	j       $31
+	.end    PrintInt
 
-	.globl ThreadJoin
-	.ent    ThreadJoin
-ThreadJoin:
-	addiu $2, $0, SC_ThreadJoin
-	syscall
-	j 	$31
-	.end ThreadJoin
-	
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

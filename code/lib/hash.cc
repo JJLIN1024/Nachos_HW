@@ -297,7 +297,7 @@ void
 HashTable<Key,T>::SelfTest(T *p, int numEntries)
 {
     int i;
-    HashIterator<Key, T> *iterator = new HashIterator<Key,T>(this);
+    HashIterator<Key,T> *iterator = new HashIterator<Key,T>(this);
     
     SanityCheck();
     ASSERT(IsEmpty());	// check that table is empty in various ways

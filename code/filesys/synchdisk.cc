@@ -23,13 +23,15 @@
 // 	Initialize the synchronous interface to the physical disk, in turn
 //	initializing the physical disk.
 //
+//	"name" -- UNIX file name to be used as storage for the disk data
+//	   (usually, "DISK")
 //----------------------------------------------------------------------
 
-SynchDisk::SynchDisk()
+SynchDisk::SynchDisk(char* name)
 {
     semaphore = new Semaphore("synch disk", 0);
     lock = new Lock("synch disk lock");
-    disk = new Disk(this);
+    disk = new Disk(name, this);
 }
 
 //----------------------------------------------------------------------

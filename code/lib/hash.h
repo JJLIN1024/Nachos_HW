@@ -36,7 +36,8 @@
 // lookup according to the hash function defined for the items
 // being put into the table.
 
-template <class Key,class T> class HashIterator;
+template <class Key, class T>
+class HashIterator;
 
 template <class Key, class T> 
 class HashTable {
@@ -87,7 +88,7 @@ typedef List<T> *Bucket;
     int FindNextFullBucket(int start) const;
     				// find next full bucket starting from this one
 
-    friend class HashIterator<Key,T>;
+friend class HashIterator<Key,T>;
 };
 
 // The following class can be used to step through a hash table --

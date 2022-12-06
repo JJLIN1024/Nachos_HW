@@ -11,7 +11,7 @@
 //	operations into read and write disk sector requests. 
 //	In this baseline implementation of the file system, we don't 
 //	worry about concurrent accesses to the file system
-//	by different threads.
+//	by different threads -- this is part of the assignment.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
@@ -53,6 +53,11 @@ class OpenFile {
 		}
 
     int Length() { Lseek(file, 0, 2); return Tell(file); }
+
+	int getFile()
+	{
+		return file;
+	}
     
   private:
     int file;
