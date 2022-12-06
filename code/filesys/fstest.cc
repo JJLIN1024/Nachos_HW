@@ -11,7 +11,7 @@
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
-#ifndef FILESYS_STUB
+
 #include "copyright.h"
 #include "debug.h"
 #include "utility.h"
@@ -182,5 +182,4 @@ PerformanceTest()
     }
     kernel->stats->Print();
 }
-#endif
 

@@ -82,17 +82,37 @@ Create:
 	j	$31
 	.end Create
 
-	.globl Msg
-	.ent	Msg
-Msg:
-	addiu $2,$0,SC_Msg
+	.globl Open
+	.ent	Open
+Open:
+	addiu $2,$0,SC_Open
 	syscall
 	j	$31
-	.end Msg
+	.end Open
 
-//<TODO
-	
-//TODO>
+	.globl Read
+	.ent	Read
+Read:
+	addiu $2,$0,SC_Read
+	syscall
+	j	$31
+	.end Read
+
+	.globl Write
+	.ent	Write
+Write:
+	addiu $2,$0,SC_Write
+	syscall
+	j	$31
+	.end Write
+
+	.globl Close
+	.ent	Close
+Close:
+	addiu $2,$0,SC_Close
+	syscall
+	j	$31
+	.end Close
 
         .globl ThreadFork
         .ent    ThreadFork

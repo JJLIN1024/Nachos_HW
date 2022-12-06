@@ -24,7 +24,6 @@
 #include "copyright.h"
 #include "main.h"
 #include "syscall.h"
-// #include "synch.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -49,99 +48,45 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
-
 void
 ExceptionHandler(ExceptionType which)
 {
 	int	type = kernel->machine->ReadRegister(2);
-	int	val, status;
-	// Lock* memoryPagingLock = NULL;
+	int	val;
+
     switch (which) {
-		case SyscallException:
-		{
-			switch(type) {
-			case SC_Halt:
-				DEBUG(dbgAddr, "Shutdown, initiated by user program.\n");
-				kernel->interrupt->Halt();
-				break;
-			case SC_PrintInt:
-				val=kernel->machine->ReadRegister(4);
-				cout << "Print integer:" <<val << endl;
-				return;
-	/*		case SC_Exec:
-				DEBUG(dbgAddr, "Exec\n");
-				val = kernel->machine->ReadRegister(4);
-				kernel->StringCopy(tmpStr, retVal, 1024);
-				cout << "Exec: " << val << endl;
-				val = kernel->Exec(val);
-				kernel->machine->WriteRegister(2, val);
-				return;
-	*/		case SC_Exit:
-				DEBUG(dbgAddr, "Program exit\n");
-				val=kernel->machine->ReadRegister(4);
-				cout << "return value:" << val << endl;
-				kernel->currentThread->Finish();
-				break;
-
-			case SC_Msg:
-			{
-				//DEBUG(dbgSys, "Message received.\n");
-				val = kernel->machine->ReadRegister(4);
-				{
-					char *msg = &(kernel->machine->mainMemory[val]);
-					cout << msg << endl;
-				}
-				kernel->interrupt->Halt();
-				ASSERTNOTREACHED();
-				break;
-			}
-
-			case SC_Create:
-				val = kernel->machine->ReadRegister(4);
-				{
-					char *filename = &(kernel->machine->mainMemory[val]);
-					status = kernel->fileSystem->Create(filename);	
-					kernel->machine->WriteRegister(2, (int)status);
-				}
-				return;
-				ASSERTNOTREACHED();
-				break;
-			default:
-				cerr << "Unexpected system call " << type << "\n";
-				break;
-			}
-		break;
-		}
-		case PageFaultException:
-		{
-			// // cout << "page fault exception" << endl;
-			// int virtualAddr = kernel->machine->ReadRegister(BadVAddrReg);
-			// // cout << "Bad Address: " << virtualAddr << endl;
-			// unsigned int vpn = virtualAddr / PageSize;
-
-			// // if (memoryPagingLock == NULL)
-			// // memoryPagingLock = new Lock("memoryPagingLock");
-
-			// // memoryPagingLock->Acquire();
-			// kernel->currentThread->space->pageFault(vpn);
-			// // memoryPagingLock->Release();
+	case SyscallException:
+	    switch(type) {
+		case SC_Halt:
+		    DEBUG(dbgAddr, "Shutdown, initiated by user program.\n");
+   		    kernel->interrupt->Halt();
+		    break;
+		case SC_PrintInt:
+			val=kernel->machine->ReadRegister(4);
+			cout << "Print integer:" <<val << endl;
 			return;
-		}
-		break;
-		case AddressErrorException:
-			cout << "Address Error Exception" << endl;
-			break;		
-		case ReadOnlyException:
-			cout << "Read Only Exception" << endl;
-			break;
-		case BusErrorException:
-			cout << "BusErrorException" << endl;
+/*		case SC_Exec:
+			DEBUG(dbgAddr, "Exec\n");
+			val = kernel->machine->ReadRegister(4);
+			kernel->StringCopy(tmpStr, retVal, 1024);
+			cout << "Exec: " << val << endl;
+			val = kernel->Exec(val);
+			kernel->machine->WriteRegister(2, val);
+			return;
+*/		case SC_Exit:
+			DEBUG(dbgAddr, "Program exit\n");
+			val=kernel->machine->ReadRegister(4);
+			cout << "return value:" << val << endl;
+			kernel->currentThread->Finish();
 			break;
 		default:
-			cout << kernel->currentThread->getName() << endl;
-			cout << "Bad Address: " << kernel->machine->ReadRegister(BadVAddrReg) << endl;
-			cerr << "Unexpected user mode exception" << which << "\n";
-			break;
-	}
+		    cerr << "Unexpected system call " << type << "\n";
+ 		    break;
+	    }
+	    break;
+	default:
+	    cerr << "Unexpected user mode exception" << which << "\n";
+	    break;
+    }
     ASSERTNOTREACHED();
 }

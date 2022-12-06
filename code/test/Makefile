@@ -33,7 +33,7 @@ CPP = /lib/cpp
 INCDIR =-I../userprog -I../threads -I../lib
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort test1 test2 bubble quick merge
+all: halt shell matmult sort test1 test2 
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.s > strt.s
@@ -48,7 +48,9 @@ halt: halt.o start.o
 
 #shell.o: shell.c
 #	$(CC) $(CFLAGS) -c shell.c
-
+shell: shell.o start.o
+	$(LD) $(LDFLAGS) start.o shell.o -o shell.coff
+	../bin/coff2noff shell.coff shell
 
 #sort.o: sort.c
 #	$(CC) $(CFLAGS) -c sort.c
@@ -65,30 +67,7 @@ matmult: matmult.o start.o
 test1: test1.o start.o
 	$(LD) $(LDFLAGS) start.o test1.o -o test1.coff
 	../bin/coff2noff test1.coff test1
-
 test2: test2.o start.o
 	$(LD) $(LDFLAGS) start.o test2.o -o test2.coff
 	../bin/coff2noff test2.coff test2
 
-bubble: bubble.o start.o
-	$(LD) $(LDFLAGS) start.o bubble.o -o bubble.coff
-	../bin/coff2noff bubble.coff bubble
-
-quick: 	quick.o start.o
-	$(LD) $(LDFLAGS) start.o quick.o -o quick.coff
-	../bin/coff2noff quick.coff quick
-
-merge: 	merge.o start.o
-	$(LD) $(LDFLAGS) start.o merge.o -o merge.coff
-	../bin/coff2noff merge.coff merge
-
-# <EDITED
-# Copy and modify this  if  a new test program is created!
-fileTest1: fileTest1.o start.o
-	$(LD) $(LDFLAGS) start.o fileTest1.o -o fileTest1.coff
-	../bin/coff2noff fileTest1.coff fileTest1
-
-fileTest2: fileTest2.o start.o
-	$(LD) $(LDFLAGS) start.o fileTest2.o -o fileTest2.coff
-	../bin/coff2noff fileTest2.coff fileTest2
-# EDITED>

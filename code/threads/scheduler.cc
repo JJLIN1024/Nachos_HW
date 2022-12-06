@@ -24,6 +24,15 @@
 #include "main.h"
 
 //----------------------------------------------------------------------
+// Compare function
+//----------------------------------------------------------------------
+int PriorityCompare(Thread *a, Thread *b) {
+    if(a->getPriority() == b->getPriority())
+        return 0;
+    return a->getPriority() > b->getPriority() ? 1 : -1;
+}
+
+//----------------------------------------------------------------------
 // Scheduler::Scheduler
 // 	Initialize the list of ready but not running threads.
 //	Initially, no ready threads.
@@ -31,8 +40,26 @@
 
 Scheduler::Scheduler()
 {
-//	schedulerType = type;
-	readyList = new List<Thread *>; 
+	Scheduler(RR);
+}
+
+Scheduler::Scheduler(SchedulerType type)
+{
+	schedulerType = type;
+	switch(schedulerType) {
+    	case RR:
+        	readyList = new List<Thread *>;
+        	break;
+    	case SJF:
+		/* todo */
+        	break;
+    	case Priority:
+		readyList = new SortedList<Thread *>(PriorityCompare);
+        	break;
+    	case FIFO:
+		/* todo */
+		break;
+   	}
 	toBeDestroyed = NULL;
 } 
 
@@ -59,7 +86,7 @@ Scheduler::ReadyToRun (Thread *thread)
 {
     ASSERT(kernel->interrupt->getLevel() == IntOff);
     DEBUG(dbgThread, "Putting thread on ready list: " << thread->getName());
-
+    
     thread->setStatus(READY);
     readyList->Append(thread);
 }
@@ -90,7 +117,7 @@ Scheduler::FindNextToRun ()
 //	and load the state of the new thread, by calling the machine
 //	dependent context switch routine, SWITCH.
 //
-//  Note: we assume the state of the previously running thread has
+//      Note: we assume the state of the previously running thread has
 //	already been changed from running to blocked or ready (depending).
 // Side effect:
 //	The global variable kernel->currentThread becomes nextThread.
@@ -116,14 +143,14 @@ Scheduler::Run (Thread *nextThread, bool finishing)
     }
     
 #ifdef USER_PROGRAM			// ignore until running user programs 
-    if (oldThread->space != NULL) {	    // if this thread is a user program,
+    if (oldThread->space != NULL) {	// if this thread is a user program,
         oldThread->SaveUserState(); 	// save the user's CPU registers
 	oldThread->space->SaveState();
     }
 #endif
     
     oldThread->CheckOverflow();		    // check if the old thread
-					                    // had an undetected stack overflow
+					    // had an undetected stack overflow
 
     kernel->currentThread = nextThread;  // switch to the next thread
     nextThread->setStatus(RUNNING);      // nextThread is now running

@@ -103,7 +103,7 @@ Thread::Fork(VoidFunctionPtr func, void *arg)
 
     oldLevel = interrupt->SetLevel(IntOff);
     scheduler->ReadyToRun(this);	// ReadyToRun assumes that interrupts 
-					                // are disabled!
+					// are disabled!
     (void) interrupt->SetLevel(oldLevel);
 }    
 
@@ -179,7 +179,7 @@ Thread::Finish ()
     DEBUG(dbgThread, "Finishing thread: " << name);
     
     Sleep(TRUE);				// invokes SWITCH
-                                // not reached
+    // not reached
 }
 
 //----------------------------------------------------------------------
@@ -341,7 +341,7 @@ Thread::StackAllocate (VoidFunctionPtr func, void *arg)
 
 #ifdef x86
     // the x86 passes the return address on the stack.  In order for SWITCH() 
-    // to go to ThreadRoot when we switch to this thread, the return address
+    // to go to ThreadRoot when we switch to this thread, the return addres 
     // used in SWITCH() must be the starting address of ThreadRoot.
     stackTop = stack + StackSize - 4;	// -4 to be on the safe side!
     *(--stackTop) = (int) ThreadRoot;
@@ -410,14 +410,15 @@ Thread::RestoreUserState()
 //----------------------------------------------------------------------
 
 static void
-SimpleThread(int which)
+SimpleThread()
 {
-    int num;
-    
-    for (num = 0; num < 5; num++) {
-	cout << "*** thread " << which << " looped " << num << " times\n";
-        kernel->currentThread->Yield();
-    }
+    Thread *thread = kernel->currentThread;
+    while (thread->getBurstTime() > 0) {
+        thread->setBurstTime(thread->getBurstTime() - 1);
+	printf("%s: %d\n", kernel->currentThread->getName(), kernel->currentThread->getBurstTime());
+        //kernel->currentThread->Yield();
+	kernel->interrupt->OneTick();
+    }    
 }
 
 //----------------------------------------------------------------------
@@ -430,10 +431,19 @@ void
 Thread::SelfTest()
 {
     DEBUG(dbgThread, "Entering Thread::SelfTest");
+    
+    const int number 	 = 3;
+    char *name[number] 	 = {"A", "B", "C"};
+    int burst[number] 	 = {3, 10, 4};
+    int priority[number] = {4, 5, 3};
 
-    Thread *t = new Thread("forked thread");
-
-    t->Fork((VoidFunctionPtr) SimpleThread, (void *) 1);
-    SimpleThread(0);
+    Thread *t;
+    for (int i = 0; i < number; i ++) {
+        t = new Thread(name[i]);
+        t->setPriority(priority[i]);
+        t->setBurstTime(burst[i]);
+        t->Fork((VoidFunctionPtr) SimpleThread, (void *)NULL);
+    }
+    kernel->currentThread->Yield();
 }
 

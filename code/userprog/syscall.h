@@ -23,12 +23,13 @@
 #define SC_Exec		2
 #define SC_Join		3
 #define SC_Create	4
-//<TODO
-//TODO>
+#define SC_Open		5
+#define SC_Read		6
+#define SC_Write	7
+#define SC_Close	8
 #define SC_ThreadFork	9
 #define SC_ThreadYield	10
 #define SC_PrintInt	11
-#define SC_Msg	12
 
 #ifndef IN_ASM
 
@@ -86,18 +87,16 @@ typedef int OpenFileId;
 #define ConsoleInput	0  
 #define ConsoleOutput	1  
  
-/* Just for simply showing message, not a safe way for console IO */
-void Msg(char *msg);
-
 /* Create a Nachos file, with "name" */
-int Create(char *name);
+void Create(char *name);
 
-//<TODO
 /* Open the Nachos file "name", and return an "OpenFileId" that can 
  * be used to read and write to the file.
  */
+OpenFileId Open(char *name);
 
 /* Write "size" bytes from "buffer" to the open file. */
+void Write(char *buffer, int size, OpenFileId id);
 
 /* Read "size" bytes from the open file into "buffer".  
  * Return the number of bytes actually read -- if the open file isn't
@@ -105,10 +104,12 @@ int Create(char *name);
  * characters to read, return whatever is available (for I/O devices, 
  * you should always wait until you can return at least one character).
  */
+int Read(char *buffer, int size, OpenFileId id);
 
 /* Close the file, we're done reading and writing to it. */
+void Close(OpenFileId id);
 
-//TODO>
+
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program. 

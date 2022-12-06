@@ -22,7 +22,6 @@
 
 #include "copyright.h"
 #include "utility.h"
-#include "sysdep.h"
 
 #ifdef FILESYS_STUB			// Temporarily implement calls to 
 					// Nachos file system as calls to UNIX!
@@ -53,11 +52,6 @@ class OpenFile {
 		}
 
     int Length() { Lseek(file, 0, 2); return Tell(file); }
-
-	int getFile()
-	{
-		return file;
-	}
     
   private:
     int file;

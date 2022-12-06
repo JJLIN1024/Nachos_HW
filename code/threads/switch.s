@@ -17,8 +17,8 @@
  *
  * ThreadRoot(InitialPC, InitialArg, WhenDonePC, StartupPC)
  *	InitialPC  - The program counter of the procedure to run
- *				 in this thread.
- *  InitialArg - The single argument to the thread.
+ *			in this thread.
+ *      InitialArg - The single argument to the thread.
  *	WhenDonePC - The routine to call when the thread returns.
  *	StartupPC  - Routine to call when the thread is started.
  *
@@ -27,9 +27,9 @@
  *
  * SWITCH(oldThread, newThread)
  * 	oldThread  - The current thread that was running, where the
- *				CPU register state is to be saved.
+ *		CPU register state is to be saved.
  * 	newThread  - The new thread to be run, where the CPU register
- *				state is to be loaded from.
+ *		state is to be loaded from.
  */
 
 /*
