@@ -12,83 +12,70 @@
 
 # if you are cross-compiling, you need to point to the right executables
 # and change the flags to ld and the build procedure for as
-
-GCCDIR = gnu-decstation-ultrix/decstation-ultrix/
-
+GCCDIR = /usr/local/nachos/decstation-ultrix/bin/
 LDFLAGS = -T script -N
 ASFLAGS = -mips2
 CPPFLAGS = $(INCDIR)
 
+
 # if you aren't cross-compiling:
-# GCCDIR =
-# LDFLAGS = -N -T 0
-# ASFLAGS =
-# CPPFLAGS = -P $(INCDIR)
+#GCCDIR =
+#LDFLAGS = -N -T 0
+#ASFLAGS =
+#CPPFLAGS = -P $(INCDIR)
 
-PATH = $(GCCDIR):/lib:/usr/bin:/bin
 
-CC = $(GCCDIR)gcc -Bgnu-decstation-ultrix/
+CC = $(GCCDIR)gcc
 AS = $(GCCDIR)as
 LD = $(GCCDIR)ld
 
-CPP = gcc -E
-INCDIR =-I../userprog -I../threads
+CPP = /lib/cpp
+INCDIR =-I../userprog -I../threads -I../lib
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: array exectest exittest  halt shell matmult sort
-
-
+all: halt shell matmult sort test1 test2 testSleep1 testSleep2
 
 start.o: start.s ../userprog/syscall.h
-	$(CPP) $(CPPFLAGS) start.c > strt.s
+	$(CPP) $(CPPFLAGS) start.s > strt.s
 	$(AS) $(ASFLAGS) -o start.o strt.s
 	rm strt.s
 
-######################################################testing from net
-########array for testing#######
-array.o: array.c
-	$(CC) $(CFLAGS) -c array.c
-array: array.o  start.o
-	$(LD) $(LDFLAGS) start.o array.o -o array.coff
-	../bin/coff2noff array.coff array
-
-########exectest for testing#######
-exectest.o: exectest.c
-	$(CC) $(CFLAGS) -c exectest.c
-exectest: exectest.o  start.o
-	$(LD) $(LDFLAGS) start.o exectest.o -o exectest.coff
-	../bin/coff2noff exectest.coff exectest
-
-########exittest for testing#######
-exittest.o: exittest.c
-	$(CC) $(CFLAGS) -c exittest.c
-exittest: exittest.o  start.o
-	$(LD) $(LDFLAGS) start.o exittest.o -o exittest.coff
-	../bin/coff2noff exittest.coff exittest
-#####################################################################
-
-halt.o: halt.c
-	$(CC) $(CFLAGS) -c halt.c
-
+#halt.o: halt.c
+#	$(CC) $(CFLAGS) -c halt.c
 halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
 
-
-shell.o: shell.c
-	$(CC) $(CFLAGS) -c shell.c
+#shell.o: shell.c
+#	$(CC) $(CFLAGS) -c shell.c
 shell: shell.o start.o
 	$(LD) $(LDFLAGS) start.o shell.o -o shell.coff
 	../bin/coff2noff shell.coff shell
 
-sort.o: sort.c
-	$(CC) $(CFLAGS) -c sort.c
+#sort.o: sort.c
+#	$(CC) $(CFLAGS) -c sort.c
 sort: sort.o start.o
 	$(LD) $(LDFLAGS) start.o sort.o -o sort.coff
 	../bin/coff2noff sort.coff sort
 
-matmult.o: matmult.c
-	$(CC) $(CFLAGS) -c matmult.c
+#matmult.o: matmult.c
+#	$(CC) $(CFLAGS) -c matmult.c
 matmult: matmult.o start.o
 	$(LD) $(LDFLAGS) start.o matmult.o -o matmult.coff
 	../bin/coff2noff matmult.coff matmult
+
+test1: test1.o start.o
+	$(LD) $(LDFLAGS) start.o test1.o -o test1.coff
+	../bin/coff2noff test1.coff test1
+
+test2: test2.o start.o
+	$(LD) $(LDFLAGS) start.o test2.o -o test2.coff
+	../bin/coff2noff test2.coff test2
+
+testSleep1: testSleep1.o start.o
+	$(LD) $(LDFLAGS) start.o testSleep1.o -o testSleep1.coff
+	../bin/coff2noff testSleep1.coff testSleep1
+
+testSleep2: testSleep2.o start.o
+	$(LD) $(LDFLAGS) start.o testSleep2.o -o testSleep2.coff
+	../bin/coff2noff testSleep2.coff testSleep2

@@ -24,6 +24,8 @@
 #include "utility.h"
 #include "filehdr.h"
 #include "directory.h"
+#include <stdio.h>
+#include <string.h>
 
 //----------------------------------------------------------------------
 // Directory::Directory
@@ -40,7 +42,7 @@ Directory::Directory(int size)
     table = new DirectoryEntry[size];
     tableSize = size;
     for (int i = 0; i < tableSize; i++)
-	table[i].inUse = false;
+	table[i].inUse = FALSE;
 }
 
 //----------------------------------------------------------------------
@@ -63,7 +65,7 @@ Directory::~Directory()
 void
 Directory::FetchFrom(OpenFile *file)
 {
-    file->ReadAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
+    (void) file->ReadAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
 }
 
 //----------------------------------------------------------------------
@@ -76,7 +78,7 @@ Directory::FetchFrom(OpenFile *file)
 void
 Directory::WriteBack(OpenFile *file)
 {
-    file->WriteAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
+    (void) file->WriteAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
 }
 
 //----------------------------------------------------------------------
@@ -88,7 +90,7 @@ Directory::WriteBack(OpenFile *file)
 //----------------------------------------------------------------------
 
 int
-Directory::FindIndex(const char *name)
+Directory::FindIndex(char *name)
 {
     for (int i = 0; i < tableSize; i++)
         if (table[i].inUse && !strncmp(table[i].name, name, FileNameMaxLen))
@@ -106,7 +108,7 @@ Directory::FindIndex(const char *name)
 //----------------------------------------------------------------------
 
 int
-Directory::Find(const char *name)
+Directory::Find(char *name)
 {
     int i = FindIndex(name);
 
@@ -117,8 +119,8 @@ Directory::Find(const char *name)
 
 //----------------------------------------------------------------------
 // Directory::Add
-// 	Add a file into the directory.  Return true if successful;
-//	return false if the file name is already in the directory, or if
+// 	Add a file into the directory.  Return TRUE if successful;
+//	return FALSE if the file name is already in the directory, or if
 //	the directory is completely full, and has no more space for
 //	additional file names.
 //
@@ -127,38 +129,38 @@ Directory::Find(const char *name)
 //----------------------------------------------------------------------
 
 bool
-Directory::Add(const char *name, int newSector)
+Directory::Add(char *name, int newSector)
 { 
     if (FindIndex(name) != -1)
-	return false;
+	return FALSE;
 
     for (int i = 0; i < tableSize; i++)
         if (!table[i].inUse) {
-            table[i].inUse = true;
+            table[i].inUse = TRUE;
             strncpy(table[i].name, name, FileNameMaxLen); 
             table[i].sector = newSector;
-        return true;
+        return TRUE;
 	}
-    return false;	// no space.  Fix when we have extensible files.
+    return FALSE;	// no space.  Fix when we have extensible files.
 }
 
 //----------------------------------------------------------------------
 // Directory::Remove
-// 	Remove a file name from the directory.  Return true if successful;
-//	return false if the file isn't in the directory. 
+// 	Remove a file name from the directory.  Return TRUE if successful;
+//	return FALSE if the file isn't in the directory. 
 //
 //	"name" -- the file name to be removed
 //----------------------------------------------------------------------
 
 bool
-Directory::Remove(const char *name)
+Directory::Remove(char *name)
 { 
     int i = FindIndex(name);
 
     if (i == -1)
-	return false; 		// name not in directory
-    table[i].inUse = false;
-    return true;	
+	return FALSE; 		// name not in directory
+    table[i].inUse = FALSE;
+    return TRUE;	
 }
 
 //----------------------------------------------------------------------

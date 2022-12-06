@@ -14,7 +14,7 @@
 //
 //  DO NOT CHANGE -- part of the machine emulation
 //
-// Copyright (c) 1992-1993 The Regents of the University of California.
+// Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
@@ -24,16 +24,14 @@
 #include "copyright.h"
 #include "utility.h"
 #include "translate.h"
-#include "disk.h"
 
 // Definitions related to the size, and format of user memory
 
-const int PageSize = SectorSize; 	// set the page size equal to
-					// the disk sector size, for
-					// simplicity
+const unsigned int PageSize = 128; 		// set the page size equal to
+					// the disk sector size, for simplicity
 
-const int NumPhysPages = 4;
-const int MemorySize = NumPhysPages * PageSize;
+const unsigned int NumPhysPages = 128;
+const int MemorySize = (NumPhysPages * PageSize);
 const int TLBSize = 4;			// if there is a TLB, make it small
 
 enum ExceptionType { NoException,           // Everything ok!
@@ -71,26 +69,6 @@ enum ExceptionType { NoException,           // Everything ok!
 
 #define NumTotalRegs 	40
 
-// The following class defines an instruction, represented in both
-// 	undecoded binary form
-//      decoded to identify
-//	    operation to do
-//	    registers to act on
-//	    any immediate operand value
-
-class Instruction {
-  public:
-    void Decode();	// decode the binary representation of the instruction
-
-    unsigned int value; // binary representation of the instruction
-
-    char opCode;     // Type of instruction.  This is NOT the same as the
-    		     // opcode field from the instruction: see defs in mips.h
-    char rs, rt, rd; // Three registers from instruction.
-    int extra;       // Immediate or target or shamt field or offset.
-                     // Immediates are sign-extended.
-};
-
 // The following class defines the simulated host workstation hardware, as 
 // seen by user programs -- the CPU registers, main memory, etc.
 // User programs shouldn't be able to tell that they are running on our 
@@ -103,6 +81,9 @@ class Instruction {
 //
 // The procedures in this class are defined in machine.cc, mipssim.cc, and
 // translate.cc.
+
+class Instruction;
+class Interrupt;
 
 class Machine {
   public:
@@ -118,45 +99,14 @@ class Machine {
     void WriteRegister(int num, int value);
 				// store a value into a CPU register
 
-
-// Routines internal to the machine simulation -- DO NOT call these 
-
-    void OneInstruction(Instruction *instr); 	
-    				// Run one instruction of a user program.
-    void DelayedLoad(int nextReg, int nextVal);  	
-				// Do a pending delayed load (modifying a reg)
-    
-    bool ReadMem(int addr, int size, int* value);
-    bool WriteMem(int addr, int size, int value);
-    				// Read or write 1, 2, or 4 bytes of virtual 
-				// memory (at addr).  Return false if a 
-				// correct translation couldn't be found.
-    
-    ExceptionType Translate(int virtAddr, int* physAddr, int size,bool writing);
-    				// Translate an address, and check for 
-				// alignment.  Set the use and dirty bits in 
-				// the translation entry appropriately,
-    				// and return an exception code if the 
-				// translation couldn't be completed.
-
-    void RaiseException(ExceptionType which, int badVAddr);
-				// Trap to the Nachos kernel, because of a
-				// system call or other exception.  
-
-    void Debugger();		// invoke the user program debugger
-    void DumpState();		// print the user CPU and memory state 
-
-
-// Data structures -- all of these are accessible to Nachos kernel code.
-// "public" for convenience.
+// Data structures accessible to the Nachos kernel -- main memory and the
+// page table/TLB.
 //
 // Note that *all* communication between the user program and the kernel 
-// are in terms of these data structures.
+// are in terms of these data structures (plus the CPU registers).
 
     char *mainMemory;		// physical memory to store user program,
 				// code and data, while executing
-    int registers[NumTotalRegs]; // CPU registers, for executing user programs
-
 
 // NOTE: the hardware translation of virtual addresses in the user program
 // to physical addresses (relative to the beginning of "mainMemory")
@@ -181,12 +131,64 @@ class Machine {
 
     TranslationEntry *pageTable;
     unsigned int pageTableSize;
+    bool ReadMem(int addr, int size, int* value);
+
+
+
+    int  Identity;
+    int SectorNum;//record sector number
+    int FrameName[NumPhysPages];
+    bool Occupied_frame[NumPhysPages];//record which frame in the main memory is occupied.
+    bool Occupied_virpage[NumPhysPages];
+    
+    // start for page replacement //
+    int LRU_times[NumPhysPages]; //for LRU
+    bool reference_bit[NumPhysPages];//for second chance algorithm.
+    // end //
+
+    TranslationEntry *main_tab[NumPhysPages];
+
 
   private:
+
+// Routines internal to the machine simulation -- DO NOT call these directly
+    void DelayedLoad(int nextReg, int nextVal);  	
+				// Do a pending delayed load (modifying a reg)
+
+    void OneInstruction(Instruction *instr); 	
+    				// Run one instruction of a user program.
+    
+//    bool ReadMem(int addr, int size, int* value);
+    bool WriteMem(int addr, int size, int value);
+    				// Read or write 1, 2, or 4 bytes of virtual 
+				// memory (at addr).  Return FALSE if a 
+				// correct translation couldn't be found.
+
+    ExceptionType Translate(int virtAddr, int* physAddr, int size,bool writing);
+    				// Translate an address, and check for 
+				// alignment.  Set the use and dirty bits in 
+				// the translation entry appropriately,
+    				// and return an exception code if the 
+				// translation couldn't be completed.
+
+    void RaiseException(ExceptionType which, int badVAddr);
+				// Trap to the Nachos kernel, because of a
+				// system call or other exception.  
+
+    void Debugger();		// invoke the user program debugger
+    void DumpState();		// print the user CPU and memory state 
+
+
+// Internal data structures
+
+    int registers[NumTotalRegs]; // CPU registers, for executing user programs
+
     bool singleStep;		// drop back into the debugger after each
 				// simulated instruction
     int runUntilTime;		// drop back into the debugger when simulated
 				// time reaches this value
+
+ friend class Interrupt;		// calls DelayedLoad()    
 };
 
 extern void ExceptionHandler(ExceptionType which);

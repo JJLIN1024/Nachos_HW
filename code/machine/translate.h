@@ -29,8 +29,8 @@
 
 class TranslationEntry {
   public:
-    int virtualPage;  	// The page number in virtual memory.
-    int physicalPage;  	// The page number in real memory (relative to the
+    unsigned int virtualPage;  	// The page number in virtual memory.
+    unsigned int physicalPage;  // The page number in real memory (relative to the
 			//  start of "mainMemory"
     bool valid;         // If this bit is set, the translation is ignored.
 			// (In other words, the entry hasn't been initialized.)
@@ -40,6 +40,10 @@ class TranslationEntry {
 			// page is referenced or modified.
     bool dirty;         // This bit is set by the hardware every time the
 			// page is modified.
+
+    int ID;
+
+    int LRU_times;
 };
 
 #endif

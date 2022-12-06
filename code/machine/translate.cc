@@ -25,17 +25,12 @@
 //
 // DO NOT CHANGE -- part of the machine emulation
 //
-// Copyright (c) 1992-1993 The Regents of the University of California.
+// Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
-#include "machine.h"
-#include "memoryManager.h"
-#include "addrspace.h"
-#include "system.h"
-
-extern MemoryManager* memoryManager;
+#include "main.h"
 
 // Routines for converting Words and Short Words to and from the
 // simulated machine's format of little endian.  These end up
@@ -79,7 +74,7 @@ ShortToMachine(unsigned short shortword) { return ShortToHost(shortword); }
 //      Read "size" (1, 2, or 4) bytes of virtual memory at "addr" into 
 //	the location pointed to by "value".
 //
-//   	Returns false if the translation step from virtual to physical memory
+//   	Returns FALSE if the translation step from virtual to physical memory
 //   	failed.
 //
 //	"addr" -- the virtual address to read from
@@ -94,37 +89,34 @@ Machine::ReadMem(int addr, int size, int *value)
     ExceptionType exception;
     int physicalAddress;
     
-    DEBUG('a', "Reading VA 0x%x, size %d\n", addr, size);
+    DEBUG(dbgAddr, "Reading VA " << addr << ", size " << size);
     
-    exception = Translate(addr, &physicalAddress, size, false);
+    exception = Translate(addr, &physicalAddress, size, FALSE);
     if (exception != NoException) {
-	machine->RaiseException(exception, addr);
-	return false;
+	RaiseException(exception, addr);
+	return FALSE;
     }
     switch (size) {
       case 1:
-	data = machine->mainMemory[physicalAddress];
+	data = mainMemory[physicalAddress];
 	*value = data;
 	break;
 	
       case 2:
-	data = *(unsigned short *) &machine->mainMemory[physicalAddress];
+	data = *(unsigned short *) &mainMemory[physicalAddress];
 	*value = ShortToHost(data);
 	break;
 	
       case 4:
-	data = *(unsigned int *) &machine->mainMemory[physicalAddress];
+	data = *(unsigned int *) &mainMemory[physicalAddress];
 	*value = WordToHost(data);
 	break;
 
-      default: ASSERT(false);
+      default: ASSERT(FALSE);
     }
     
-    DEBUG('a', "\tvalue read = %8.8x\n", *value);
-
-	memoryManager->UpdateLastAccessTime(physicalAddress / PageSize);
-
-    return true;
+    DEBUG(dbgAddr, "\tvalue read = " << *value);
+    return (TRUE);
 }
 
 //----------------------------------------------------------------------
@@ -132,7 +124,7 @@ Machine::ReadMem(int addr, int size, int *value)
 //      Write "size" (1, 2, or 4) bytes of the contents of "value" into
 //	virtual memory at location "addr".
 //
-//   	Returns false if the translation step from virtual to physical memory
+//   	Returns FALSE if the translation step from virtual to physical memory
 //   	failed.
 //
 //	"addr" -- the virtual address to write to
@@ -146,32 +138,32 @@ Machine::WriteMem(int addr, int size, int value)
     ExceptionType exception;
     int physicalAddress;
      
-    DEBUG('a', "Writing VA 0x%x, size %d, value 0x%x\n", addr, size, value);
+    DEBUG(dbgAddr, "Writing VA " << addr << ", size " << size << ", value " << value);
 
-    exception = Translate(addr, &physicalAddress, size, true);
+    exception = Translate(addr, &physicalAddress, size, TRUE);
     if (exception != NoException) {
-	machine->RaiseException(exception, addr);
-	return false;
+	RaiseException(exception, addr);
+	return FALSE;
     }
     switch (size) {
       case 1:
-	machine->mainMemory[physicalAddress] = (unsigned char) (value & 0xff);
+	mainMemory[physicalAddress] = (unsigned char) (value & 0xff);
 	break;
 
       case 2:
-	*(unsigned short *) &machine->mainMemory[physicalAddress]
+	*(unsigned short *) &mainMemory[physicalAddress]
 		= ShortToMachine((unsigned short) (value & 0xffff));
 	break;
       
       case 4:
-	*(unsigned int *) &machine->mainMemory[physicalAddress]
+	*(unsigned int *) &mainMemory[physicalAddress]
 		= WordToMachine((unsigned int) value);
 	break;
 	
-      default: ASSERT(false);
+      default: ASSERT(FALSE);
     }
     
-    return true;
+    return TRUE;
 }
 
 //----------------------------------------------------------------------
@@ -186,7 +178,7 @@ Machine::WriteMem(int addr, int size, int value)
 //	"virtAddr" -- the virtual address to translate
 //	"physAddr" -- the place to store the physical address
 //	"size" -- the amount of memory being read or written
-// 	"writing" -- if true, check the "read-only" bit in the TLB
+// 	"writing" -- if TRUE, check the "read-only" bit in the TLB
 //----------------------------------------------------------------------
 
 ExceptionType
@@ -197,11 +189,11 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     TranslationEntry *entry;
     unsigned int pageFrame;
 
-    DEBUG('a', "\tTranslate 0x%x, %s: ", virtAddr, writing ? "write" : "read");
+    DEBUG(dbgAddr, "\tTranslate " << virtAddr << (writing ? " , write" : " , read"));
 
 // check for alignment errors
     if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
-	DEBUG('a', "alignment problem at %d, size %d!\n", virtAddr, size);
+	DEBUG(dbgAddr, "Alignment problem at " << virtAddr << ", size " << size);
 	return AddressErrorException;
     }
     
@@ -216,23 +208,84 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     
     if (tlb == NULL) {		// => page table => vpn is index into table
 	if (vpn >= pageTableSize) {
-	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-			virtAddr, pageTableSize);
+	    DEBUG(dbgAddr, "Illegal virtual page # " << virtAddr);
 	    return AddressErrorException;
 	} else if (!pageTable[vpn].valid) {
-	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-			virtAddr, pageTableSize);
-	    return PageFaultException;
+
+        printf("Page fault Happen!\n");
+        kernel->stats->numPageFaults += 1;     // nachos pagefault counter +1
+        j=0;
+        while(kernel->machine->Occupied_frame[j]!=FALSE&&j<NumPhysPages)
+            j += 1;                            // find valid frame space
+       
+            if( j < NumPhysPages){          // if find valid frame space, save the page in virtual memory into physical memory
+                char *buffer; //save page temporary
+                buffer = new char[PageSize];
+                pageTable[vpn].physicalPage = j;       // save physical memory position
+                pageTable[vpn].valid = TRUE;           // page has already in physical memory
+                kernel->machine->Occupied_frame[j]=TRUE;
+                kernel->machine->FrameName[j]=pageTable[vpn].ID;
+                kernel->machine->main_tab[j]=&pageTable[vpn];           // save the page pointer
+                    
+                pageTable[vpn].LRU_times++; //for LRU
+                     
+                kernel->Swap_Area->ReadSector(pageTable[vpn].virtualPage, buffer);      // read data from swap area
+                bcopy(buffer,&mainMemory[j*PageSize],PageSize);        // save data into physical memory
+                    
+            }
+            else {
+                char *buffer1;
+                char *buffer2;
+                buffer1 = new char[PageSize];
+                buffer2 = new char[PageSize];
+                     
+                //Random
+                //Swap_out_page = (rand()%32);
+                     
+                //LRU
+                     
+                int min = pageTable[0].LRU_times;
+                Swap_out_page=0;
+                for(int cc=0;cc<32;cc++){
+                    if(min > pageTable[cc].LRU_times){
+                        min = pageTable[cc].LRU_times;
+                        Swap_out_page = cc;
+                                    
+                    }
+                } 
+                pageTable[Swap_out_page].LRU_times++;  
+                     
+                    
+                     
+                     
+                printf("Page%d swap out!\n",Swap_out_page);
+                bcopy(&mainMemory[Swap_out_page*PageSize],buffer1,PageSize);
+                kernel->Swap_Area->ReadSector(pageTable[vpn].virtualPage, buffer2);
+                bcopy(buffer2,&mainMemory[Swap_out_page*PageSize],PageSize);
+                kernel->Swap_Area->WriteSector(pageTable[vpn].virtualPage,buffer1);
+                     
+                main_tab[Swap_out_page]->virtualPage=pageTable[vpn].virtualPage;
+                main_tab[Swap_out_page]->valid=FALSE;
+
+                pageTable[vpn].valid = TRUE;
+                pageTable[vpn].physicalPage = Swap_out_page;
+                kernel->machine->FrameName[Swap_out_page]=pageTable[vpn].ID;
+                main_tab[Swap_out_page]=&pageTable[vpn];
+         	    printf("Finish the page replcement!\n");
+                
+
+                  
+        }
 	}
 	entry = &pageTable[vpn];
     } else {
         for (entry = NULL, i = 0; i < TLBSize; i++)
-    	    if (tlb[i].valid && (tlb[i].virtualPage == (int)vpn)) {
+    	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
 		entry = &tlb[i];			// FOUND!
 		break;
 	    }
 	if (entry == NULL) {				// not found
-    	    DEBUG('a', "*** no valid TLB entry found for this virtual page!\n");
+    	    DEBUG(dbgAddr, "Invalid TLB entry for this virtual page!");
     	    return PageFaultException;		// really, this is a TLB fault,
 						// the page may be in memory,
 						// but not in the TLB
@@ -240,7 +293,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     }
 
     if (entry->readOnly && writing) {	// trying to write to a read-only page
-	DEBUG('a', "%d mapped read-only at %d in TLB!\n", virtAddr, i);
+	DEBUG(dbgAddr, "Write to read-only page at " << virtAddr);
 	return ReadOnlyException;
     }
     pageFrame = entry->physicalPage;
@@ -248,14 +301,14 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     // if the pageFrame is too big, there is something really wrong! 
     // An invalid translation was loaded into the page table or TLB. 
     if (pageFrame >= NumPhysPages) { 
-	DEBUG('a', "*** frame %d > %d!\n", pageFrame, NumPhysPages);
+	DEBUG(dbgAddr, "Illegal pageframe " << pageFrame);
 	return BusErrorException;
     }
-    entry->use = true;		// set the use, dirty bits
+    entry->use = TRUE;		// set the use, dirty bits
     if (writing)
-	entry->dirty = true;
+	entry->dirty = TRUE;
     *physAddr = pageFrame * PageSize + offset;
     ASSERT((*physAddr >= 0) && ((*physAddr + size) <= MemorySize));
-    DEBUG('a', "phys addr = 0x%x\n", *physAddr);
+    DEBUG(dbgAddr, "phys addr = " << *physAddr);
     return NoException;
 }

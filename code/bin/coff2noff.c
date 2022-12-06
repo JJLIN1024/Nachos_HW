@@ -29,7 +29,6 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "coff.h"
 #include "noff.h"
@@ -42,7 +41,7 @@
 unsigned int
 WordToHost(unsigned int word) {
 #ifdef HOST_IS_BIG_ENDIAN
-	 register unsigned DWORD result;
+	 register unsigned long result;
 	 result = (word >> 24) & 0x000000ff;
 	 result |= (word >> 8) & 0x0000ff00;
 	 result |= (word << 8) & 0x00ff0000;
@@ -67,16 +66,17 @@ ShortToHost(unsigned short shortword) {
 
 #define ReadStruct(f,s) 	Read(f,(char *)&s,sizeof(s))
 
+extern char *malloc();
 char *noffFileName = NULL;
 
 /* read and check for error */
 void Read(int fd, char *buf, int nBytes)
 {
-	if (read(fd, buf, nBytes) != nBytes) {
-    	fprintf(stderr, "File is too short\n");
-		unlink(noffFileName);
-		exit(1);
-	}
+    if (read(fd, buf, nBytes) != nBytes) {
+        fprintf(stderr, "File is too short\n");
+	unlink(noffFileName);
+	exit(1);
+    }
 }
 
 /* write and check for error */

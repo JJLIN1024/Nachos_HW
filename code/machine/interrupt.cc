@@ -16,38 +16,50 @@
 //
 //  DO NOT CHANGE -- part of the machine emulation
 //
-// Copyright (c) 1992-1993 The Regents of the University of California.
+// Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
 #include "interrupt.h"
-#include "system.h"
+#include "main.h"
 
 // String definitions for debugging messages
 
-static const char *intLevelNames[] = { "off", "on"};
-static const char *intTypeNames[] = { "timer", "disk", "console write", 
-				      "console read", "network send", "network recv"};
+static char *intLevelNames[] = { "off", "on"};
+static char *intTypeNames[] = { "timer", "disk", "console write", 
+			"console read", "elevator", "network send", 
+			"network recv"};
 
 //----------------------------------------------------------------------
 // PendingInterrupt::PendingInterrupt
 // 	Initialize a hardware device interrupt that is to be scheduled 
 //	to occur in the near future.
 //
-//	"func" is the procedure to call when the interrupt occurs
-//	"param" is the argument to pass to the procedure
+//	"callOnInt" is the object to call when the interrupt occurs
 //	"time" is when (in simulated time) the interrupt is to occur
 //	"kind" is the hardware device that generated the interrupt
 //----------------------------------------------------------------------
 
-PendingInterrupt::PendingInterrupt(VoidFunctionPtr func, void* param, int time, 
-				IntType kind)
+PendingInterrupt::PendingInterrupt(CallBackObj *callOnInt, 
+					int time, IntType kind)
 {
-    handler = func;
-    arg = param;
+    callOnInterrupt = callOnInt;
     when = time;
     type = kind;
+}
+
+//----------------------------------------------------------------------
+// PendingCompare
+//	Compare to interrupts based on which should occur first.
+//----------------------------------------------------------------------
+
+static int
+PendingCompare (PendingInterrupt *x, PendingInterrupt *y)
+{
+    if (x->when < y->when) { return -1; }
+    else if (x->when > y->when) { return 1; }
+    else { return 0; }
 }
 
 //----------------------------------------------------------------------
@@ -60,9 +72,9 @@ PendingInterrupt::PendingInterrupt(VoidFunctionPtr func, void* param, int time,
 Interrupt::Interrupt()
 {
     level = IntOff;
-    pending = new List<PendingInterrupt*>;
-    inHandler = false;
-    yieldOnReturn = false;
+    pending = new SortedList<PendingInterrupt *>(PendingCompare);
+    inHandler = FALSE;
+    yieldOnReturn = FALSE;
     status = SystemMode;
 }
 
@@ -73,15 +85,11 @@ Interrupt::Interrupt()
 
 Interrupt::~Interrupt()
 {
-    while (!pending->IsEmpty())
-	delete pending->Remove();
+    while (!pending->IsEmpty()) {
+	delete pending->RemoveFront();
+    }
     delete pending;
 }
-
-//----------------------------------------------------------------------
-// Interrupt::ChangeLevel
-// 	Change interrupts to be enabled or disabled, without advancing 
-//	the simulated time (normally, enabling interrupts advances the time).
 
 //----------------------------------------------------------------------
 // Interrupt::ChangeLevel
@@ -93,11 +101,12 @@ Interrupt::~Interrupt()
 //	"old" -- the old interrupt status
 //	"now" -- the new interrupt status
 //----------------------------------------------------------------------
+
 void
 Interrupt::ChangeLevel(IntStatus old, IntStatus now)
 {
     level = now;
-    DEBUG('i',"\tinterrupts: %s -> %s\n",intLevelNames[old],intLevelNames[now]);
+    DEBUG(dbgInt, "\tinterrupts: " << intLevelNames[old] << " -> " << intLevelNames[now]);
 }
 
 //----------------------------------------------------------------------
@@ -116,26 +125,14 @@ Interrupt::SetLevel(IntStatus now)
 {
     IntStatus old = level;
     
-    ASSERT((now == IntOff) || (inHandler == false));// interrupt handlers are 
-						// prohibited from enabling 
-						// interrupts
+    // interrupt handlers are prohibited from enabling interrupts
+    ASSERT((now == IntOff) || (inHandler == FALSE));
 
     ChangeLevel(old, now);			// change to new state
-    if ((now == IntOn) && (old == IntOff))
+    if ((now == IntOn) && (old == IntOff)) {
 	OneTick();				// advance simulated time
+    }
     return old;
-}
-
-//----------------------------------------------------------------------
-// Interrupt::Enable
-// 	Turn interrupts on.  Who cares what they used to be? 
-//	Used in ThreadRoot, to turn interrupts on when first starting up
-//	a thread.
-//----------------------------------------------------------------------
-void
-Interrupt::Enable()
-{ 
-    SetLevel(IntOn); 
 }
 
 //----------------------------------------------------------------------
@@ -150,7 +147,8 @@ Interrupt::Enable()
 void
 Interrupt::OneTick()
 {
-    MachineStatus old = status;
+    MachineStatus oldStatus = status;
+    Statistics *stats = kernel->stats;
 
 // advance simulated time
     if (status == SystemMode) {
@@ -160,21 +158,20 @@ Interrupt::OneTick()
 	stats->totalTicks += UserTick;
 	stats->userTicks += UserTick;
     }
-    DEBUG('i', "\n== Tick %d ==\n", stats->totalTicks);
+    DEBUG(dbgInt, "== Tick " << stats->totalTicks << " ==");
 
 // check any pending interrupts are now ready to fire
-    ChangeLevel(IntOn, IntOff);		// first, turn off interrupts
-					// (interrupt handlers run with
-					// interrupts disabled)
-    while (CheckIfDue(false))		// check for pending interrupts
-	;
-    ChangeLevel(IntOff, IntOn);		// re-enable interrupts
-    if (yieldOnReturn) {		// if the timer device handler asked 
-					// for a context switch, ok to do it now
-	yieldOnReturn = false;
+    ChangeLevel(IntOn, IntOff);	// first, turn off interrupts
+				// (interrupt handlers run with
+				// interrupts disabled)
+    CheckIfDue(FALSE);		// check for pending interrupts
+    ChangeLevel(IntOff, IntOn);	// re-enable interrupts
+    if (yieldOnReturn) {	// if the timer device handler asked 
+    				// for a context switch, ok to do it now
+	yieldOnReturn = FALSE;
  	status = SystemMode;		// yield is a kernel routine
-	currentThread->Yield();
-	status = old;
+	kernel->currentThread->Yield();
+	status = oldStatus;
     }
 }
 
@@ -192,8 +189,8 @@ Interrupt::OneTick()
 void
 Interrupt::YieldOnReturn()
 { 
-    //ASSERT(inHandler == true);  
-    yieldOnReturn = true; 
+    ASSERT(inHandler == TRUE);  
+    yieldOnReturn = TRUE; 
 }
 
 //----------------------------------------------------------------------
@@ -210,16 +207,12 @@ Interrupt::YieldOnReturn()
 void
 Interrupt::Idle()
 {
-    DEBUG('i', "Machine idling; checking for interrupts.\n");
+    DEBUG(dbgInt, "Machine idling; checking for interrupts.");
     status = IdleMode;
-    if (CheckIfDue(true)) {		// check for any pending interrupts
-    	while (CheckIfDue(false))	// check for any other pending 
-	    ;				// interrupts
-        yieldOnReturn = false;		// since there's nothing in the
-					// ready queue, the yield is automatic
-        status = SystemMode;
-	return;				// return in case there's now
-					// a runnable thread
+    if (CheckIfDue(TRUE)) {	// check for any pending interrupts
+	status = SystemMode;
+	return;			// return in case there's now
+				// a runnable thread
     }
 
     // if there are no pending interrupts, and nothing is on the ready
@@ -227,9 +220,9 @@ Interrupt::Idle()
     // operating, there are *always* pending interrupts, so this code
     // is not reached.  Instead, the halt must be invoked by the user program.
 
-    DEBUG('i', "Machine idle.  No interrupts to do.\n");
-    printf("No threads ready or runnable, and no pending interrupts.\n");
-    printf("Assuming the program completed.\n");
+    DEBUG(dbgInt, "Machine idle.  No interrupts to do.");
+    cout << "No threads ready or runnable, and no pending interrupts.\n";
+    cout << "Assuming the program completed.\n";
     Halt();
 }
 
@@ -240,9 +233,9 @@ Interrupt::Idle()
 void
 Interrupt::Halt()
 {
-    printf("Machine halting!\n\n");
-    stats->Print();
-    Cleanup();     // Never returns.
+    cout << "Machine halting!\n\n";
+    kernel->stats->Print();
+    delete kernel;	// Never returns.
 }
 
 //----------------------------------------------------------------------
@@ -255,84 +248,76 @@ Interrupt::Halt()
 //	NOTE: the Nachos kernel should not call this routine directly.
 //	Instead, it is only called by the hardware device simulators.
 //
-//	"handler" is the procedure to call when the interrupt occurs
-//	"arg" is the argument to pass to the procedure
+//	"toCall" is the object to call when the interrupt occurs
 //	"fromNow" is how far in the future (in simulated time) the 
 //		 interrupt is to occur
 //	"type" is the hardware device that generated the interrupt
 //----------------------------------------------------------------------
 void
-Interrupt::Schedule(VoidFunctionPtr handler, void* arg, int fromNow, IntType type)
+Interrupt::Schedule(CallBackObj *toCall, int fromNow, IntType type)
 {
-    int when = stats->totalTicks + fromNow;
-    PendingInterrupt *toOccur = new PendingInterrupt(handler, arg, when, type);
+    int when = kernel->stats->totalTicks + fromNow;
+    PendingInterrupt *toOccur = new PendingInterrupt(toCall, when, type);
 
-    DEBUG('i', "Scheduling interrupt handler the %s at time = %d\n", 
-					intTypeNames[type], when);
+    DEBUG(dbgInt, "Scheduling interrupt handler the " << intTypeNames[type] << " at time = " << when);
     ASSERT(fromNow > 0);
 
-    pending->SortedInsert(toOccur, when);
+    pending->Insert(toOccur);
 }
 
 //----------------------------------------------------------------------
 // Interrupt::CheckIfDue
-// 	Check if an interrupt is scheduled to occur, and if so, fire it off.
+// 	Check if any interrupts are scheduled to occur, and if so, 
+//	fire them off.
 //
 // Returns:
-//	true, if we fired off any interrupt handlers
+//	TRUE, if we fired off any interrupt handlers
 // Params:
-//	"advanceClock" -- if true, there is nothing in the ready queue,
+//	"advanceClock" -- if TRUE, there is nothing in the ready queue,
 //		so we should simply advance the clock to when the next 
-//		pending interrupt would occur (if any).  If the pending
-//		interrupt is just the time-slice daemon, however, then 
-//		we're done!
+//		pending interrupt would occur (if any).
 //----------------------------------------------------------------------
 bool
 Interrupt::CheckIfDue(bool advanceClock)
 {
-    MachineStatus old = status;
-    int when;
+    PendingInterrupt *next;
+    Statistics *stats = kernel->stats;
 
     ASSERT(level == IntOff);		// interrupts need to be disabled,
 					// to invoke an interrupt handler
-    if (DebugIsEnabled('i'))
+    if (debug->IsEnabled(dbgInt)) {
 	DumpState();
-    PendingInterrupt *toOccur = 
-		pending->SortedRemove(&when);
-
-    if (toOccur == NULL)		// no pending interrupts
-	return false;			
-
-    if (advanceClock && when > stats->totalTicks) {	// advance the clock
-	stats->idleTicks += (when - stats->totalTicks);
-	stats->totalTicks = when;
-    } else if (when > stats->totalTicks) {	// not time yet, put it back
-	pending->SortedInsert(toOccur, when);
-	return false;
+    }
+    if (pending->IsEmpty()) {   	// no pending interrupts
+	return FALSE;	
+    }		
+    next = pending->Front();
+    if (next->when > stats->totalTicks) {
+        if (!advanceClock) {		// not time yet
+            return FALSE;
+        }
+        else {      		// advance the clock to next interrupt
+	    stats->idleTicks += (next->when - stats->totalTicks);
+	    stats->totalTicks = next->when;
+	}
     }
 
-// Check if there is nothing more to do, and if so, quit
-    if ((status == IdleMode) && (toOccur->type == TimerInt) 
-				&& pending->IsEmpty()) {
-	 pending->SortedInsert(toOccur, when);
-	 return false;
-    }
-
-    DEBUG('i', "Invoking interrupt handler for the %s at time %d\n", 
-			intTypeNames[toOccur->type], toOccur->when);
+    DEBUG(dbgInt, "Invoking interrupt handler for the ");
+    DEBUG(dbgInt, intTypeNames[next->type] << " at time " << next->when);
 #ifdef USER_PROGRAM
-    if (machine != NULL)
-    	machine->DelayedLoad(0, 0);
+    if (kernel->machine != NULL) {
+    	kernel->machine->DelayedLoad(0, 0);
+    }
 #endif
-    inHandler = true;
-    status = SystemMode;			// whatever we were doing,
-						// we are now going to be
-						// running in the kernel
-    (*(toOccur->handler))(toOccur->arg);	// call the interrupt handler
-    status = old;				// restore the machine status
-    inHandler = false;
-    delete toOccur;
-    return true;
+    inHandler = TRUE;
+    do {
+        next = pending->RemoveFront();    // pull interrupt off list
+        next->callOnInterrupt->CallBack();// call the interrupt handler
+	delete next;
+    } while (!pending->IsEmpty() 
+    		&& (pending->Front()->when <= stats->totalTicks));
+    inHandler = FALSE;
+    return TRUE;
 }
 
 //----------------------------------------------------------------------
@@ -342,10 +327,10 @@ Interrupt::CheckIfDue(bool advanceClock)
 //----------------------------------------------------------------------
 
 static void
-PrintPending(PendingInterrupt* pend)
+PrintPending (PendingInterrupt *pending)
 {
-    printf("Interrupt handler %s, scheduled at %d\n", 
-           intTypeNames[pend->type], pend->when);
+    cout << "Interrupt handler "<< intTypeNames[pending->type];
+    cout << ", scheduled at " << pending->when;
 }
 
 //----------------------------------------------------------------------
@@ -357,11 +342,9 @@ PrintPending(PendingInterrupt* pend)
 void
 Interrupt::DumpState()
 {
-    printf("Time: %d, interrupts %s\n", stats->totalTicks, 
-					intLevelNames[level]);
-    printf("Pending interrupts:\n");
-    fflush(stdout);
+    cout << "Time: " << kernel->stats->totalTicks;
+    cout << ", interrupts " << intLevelNames[level] << "\n";
+    cout << "Pending interrupts:\n";
     pending->Apply(PrintPending);
-    printf("End of pending interrupts\n");
-    fflush(stdout);
+    cout << "\nEnd of pending interrupts\n";
 }

@@ -1,4 +1,4 @@
-  /* Start.s 
+/* Start.s 
  *	Assembly language assist for user programs running on top of Nachos.
  *
  *	Since we don't want to pull in the entire C library, we define
@@ -114,21 +114,38 @@ Close:
 	j	$31
 	.end Close
 
-	.globl Fork
-	.ent	Fork
-Fork:
-	addiu $2,$0,SC_Fork
-	syscall
-	j	$31
-	.end Fork
+        .globl ThreadFork
+        .ent    ThreadFork
+ThreadFork:
+        addiu $2,$0,SC_ThreadFork
+        syscall
+        j       $31
+        .end ThreadFork
 
-	.globl Yield
-	.ent	Yield
-Yield:
-	addiu $2,$0,SC_Yield
+        .globl ThreadYield
+        .ent    ThreadYield
+ThreadYield:
+        addiu $2,$0,SC_ThreadYield
+        syscall
+        j       $31
+        .end ThreadYield
+
+	.globl  PrintInt
+	.ent    PrintInt
+PrintInt:
+	addiu   $2,$0,SC_PrintInt
 	syscall
-	j	$31
-	.end Yield
+	j       $31
+	.end    PrintInt
+
+    .globl  Sleep
+    .ent    Sleep
+Sleep:
+    addiu   $2,$0,SC_Sleep
+    syscall
+    j       $31
+    .end    Sleep
+
 
 /* dummy function to keep gcc happy */
         .globl  __main

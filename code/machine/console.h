@@ -9,14 +9,18 @@
 //	interrupt handler is called later when the I/O completes.
 //	For reads, an interrupt handler is called when a character arrives. 
 //
-//	The user of the device can specify the routines to be called when 
+//	In either case, the serial line connecting the computer
+//	to the console has limited bandwidth (like a modem!), and so
+//	each character takes measurable time.
+//
+//	The user of the device registers itself to be called "back" when 
 //	the read/write interrupts occur.  There is a separate interrupt
 //	for read and write, and the device is "duplex" -- a character
 //	can be outgoing and incoming at the same time.
 //
 //  DO NOT CHANGE -- part of the machine emulation
 //
-// Copyright (c) 1992-1993 The Regents of the University of California.
+// Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
@@ -25,52 +29,63 @@
 
 #include "copyright.h"
 #include "utility.h"
+#include "callback.h"
 
-// The following class defines a hardware console device.
-// Input and output to the device is simulated by reading 
-// and writing to UNIX files ("readFile" and "writeFile").
+// The following two classes define the input (and output) side of a 
+// hardware console device.  Input (and output) to the device is simulated 
+// by reading (and writing) to the UNIX file "readFile" (and "writeFile").
 //
-// Since the device is asynchronous, the interrupt handler "readAvail" 
-// is called when a character has arrived, ready to be read in.
-// The interrupt handler "writeDone" is called when an output character 
-// has been "put", so that the next character can be written.
+// Since input (and output) to the device is asynchronous, the interrupt 
+// handler "callWhenAvail" is called when a character has arrived to be 
+// read in (and "callWhenDone" is called when an output character has been 
+// "put" so that the next character can be written).
+//
+// In practice, usually a single hardware thing that does both
+// serial input and serial output.  But conceptually simpler to
+// use two objects.
 
-class Console {
+class ConsoleInput : public CallBackObj {
   public:
-    Console(const char *readFile, const char *writeFile, 
-            VoidFunctionPtr readAvail, VoidFunctionPtr writeDone,
-            void* callArg);
-				// initialize the hardware console device
-    ~Console();			// clean up console emulation
-
-// external interface -- Nachos kernel code can call these
-    void PutChar(char ch);	// Write "ch" to the console display, 
-				// and return immediately.  "writeHandler" 
-				// is called when the I/O completes. 
+    ConsoleInput(char *readFile, CallBackObj *toCall);
+				// initialize hardware console input 
+    ~ConsoleInput();		// clean up console emulation
 
     char GetChar();	   	// Poll the console input.  If a char is 
 				// available, return it.  Otherwise, return EOF.
-    				// "readHandler" is called whenever there is 
+    				// "callWhenAvail" is called whenever there is 
 				// a char to be gotten
 
-// internal emulation routines -- DO NOT call these. 
-    void WriteDone();	 	// internal routines to signal I/O completion
-    void CheckCharAvail();
+    void CallBack();		// Invoked when a character arrives
+				// from the keyboard.
 
   private:
     int readFileNo;			// UNIX file emulating the keyboard 
-    int writeFileNo;			// UNIX file emulating the display
-    VoidFunctionPtr writeHandler; 	// Interrupt handler to call when 
-					// the PutChar I/O completes
-    VoidFunctionPtr readHandler; 	// Interrupt handler to call when 
-					// a character arrives from the keyboard
-    void* handlerArg;			// argument to be passed to the 
-					// interrupt handlers
-    bool putBusy;    			// Is a PutChar operation in progress?
-					// If so, you can't do another one!
+    CallBackObj *callWhenAvail;		// Interrupt handler to call when 
+					// there is a char to be read
     char incoming;    			// Contains the character to be read,
 					// if there is one available. 
 					// Otherwise contains EOF.
+};
+
+class ConsoleOutput : public CallBackObj {
+  public:
+    ConsoleOutput(char *writeFile, CallBackObj *toCall);
+				// initialize hardware console output 
+    ~ConsoleOutput();		// clean up console emulation
+
+    void PutChar(char ch);	// Write "ch" to the console display, 
+				// and return immediately.  "callWhenDone" 
+				// will called when the I/O completes. 
+
+    void CallBack();		// Invoked when next character can be put
+				// out to the display.
+
+  private:
+    int writeFileNo;			// UNIX file emulating the display
+    CallBackObj *callWhenDone;		// Interrupt handler to call when 
+					// the next char can be put 
+    bool putBusy;    			// Is a PutChar operation in progress?
+					// If so, you can't do another one!
 };
 
 #endif // CONSOLE_H
