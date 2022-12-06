@@ -6,7 +6,7 @@
 //	The user level CPU state is saved and restored in the thread
 //	executing the user program (see thread.h).
 //
-// Copyright (c) 1992-1996 The Regents of the University of California.
+// Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
@@ -15,36 +15,48 @@
 
 #include "copyright.h"
 #include "filesys.h"
-#include <string.h>
+#include "noff.h"
 
 #define UserStackSize		1024 	// increase this as necessary!
 
+extern void deleteFromPageQueue(int value);
+
 class AddrSpace {
   public:
-    AddrSpace();			// Create an address space.
-    ~AddrSpace();			// De-allocate an address space
-
-    void Execute(char *fileName);	// Run the the program
+    AddrSpace(OpenFile *executable);	// Create an address space,
+					// initializing it with the program
 					// stored in the file "executable"
 
-    void SaveState();			// Save/restore address space-specific
-    void RestoreState();		// info on a context switch 
+    AddrSpace (AddrSpace *parentSpace, int threadPid);	// Used by fork
 
-    static bool usedPhyPage[NumPhysPages]; // Physical page usage information 
-    static int numFreePage;
-    
+    ~AddrSpace();			// De-allocate an address space
+
+    void InitRegisters();		// Initialize user-level CPU registers,
+					// before jumping to user code
+
+    void SaveState();			// Save/restore address space-specific
+    void RestoreState();		// info on a context switch
+    void freePages(bool deletePT);  // frees pages and deletes the pageTable
+
+    unsigned GetNumPages();
+
+    TranslationEntry* GetPageTable();
+
+    unsigned createSharedPageTable(int sharedSize, int *pagesCreated); // creates a page table with shared
+                                    // pages
+
+    int countSharedPages; // Keeps a count of the number of sharedPages
+    int validPages; // a count of the valid pages of the addressSpace
+
+    NoffHeader noffH; // This is the noffheader which stores information
+    char filename[300]; // This is a pointer to the name of the file
+
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
-
-    bool Load(char *fileName);		// Load the program into memory
-					// return false if not found
-
-    void InitRegisters();		// Initialize user-level CPU registers,
-					// before jumping to user code
-
+                    //
 };
 
 #endif // ADDRSPACE_H
