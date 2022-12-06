@@ -55,7 +55,7 @@ const int NumSectors = (SectorsPerTrack * NumTracks);
 
 class Disk : public CallBackObj {
   public:
-    Disk(char* name, CallBackObj *toCall); // Create a simulated disk.  
+    Disk(CallBackObj *toCall);          // Create a simulated disk.  
 					// Invoke toCall->CallBack() 
 					// when each request completes.
     ~Disk();				// Deallocate the disk.
@@ -77,6 +77,7 @@ class Disk : public CallBackObj {
 
   private:
     int fileno;				// UNIX file number for simulated disk 
+    char diskname[32];			// name of simulated disk's file
     CallBackObj *callWhenDone;		// Invoke when any disk request finishes
     bool active;     			// Is a disk operation in progress?
     int lastSector;			// The previous disk request 

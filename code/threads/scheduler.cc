@@ -29,19 +29,11 @@
 //	Initially, no ready threads.
 //----------------------------------------------------------------------
 
-int SJFCompare(Thread *a, Thread *b) {
-    if(a->getBurstTime() == b->getBurstTime())
-        return 0;
-    return a->getBurstTime() > b->getBurstTime() ? 1 : -1;
-}
-
-
-Scheduler::Scheduler() {
-    // implement shortest job first scheduling
-    readyList = new SortedList<Thread *>(SJFCompare);
-    // readyList = new List<Thread *>;
+Scheduler::Scheduler()
+{ 
+    readyList = new List<Thread *>; 
     toBeDestroyed = NULL;
-}
+} 
 
 //----------------------------------------------------------------------
 // Scheduler::~Scheduler
@@ -85,7 +77,7 @@ Scheduler::FindNextToRun ()
     ASSERT(kernel->interrupt->getLevel() == IntOff);
 
     if (readyList->IsEmpty()) {
-	return NULL;
+	    return NULL;
     } else {
     	return readyList->RemoveFront();
     }
@@ -112,22 +104,18 @@ void
 Scheduler::Run (Thread *nextThread, bool finishing)
 {
     Thread *oldThread = kernel->currentThread;
- 
-//	cout << "Current Thread" <<oldThread->getName() << "    Next Thread"<<nextThread->getName()<<endl;
-   
+    
     ASSERT(kernel->interrupt->getLevel() == IntOff);
 
     if (finishing) {	// mark that we need to delete current thread
-         ASSERT(toBeDestroyed == NULL);
-	 toBeDestroyed = oldThread;
+        ASSERT(toBeDestroyed == NULL);
+	    toBeDestroyed = oldThread;
     }
     
-#ifdef USER_PROGRAM			// ignore until running user programs 
     if (oldThread->space != NULL) {	// if this thread is a user program,
         oldThread->SaveUserState(); 	// save the user's CPU registers
-	oldThread->space->SaveState();
+	    oldThread->space->SaveState();
     }
-#endif
     
     oldThread->CheckOverflow();		    // check if the old thread
 					    // had an undetected stack overflow
@@ -155,12 +143,10 @@ Scheduler::Run (Thread *nextThread, bool finishing)
 					// before this one has finished
 					// and needs to be cleaned up
     
-#ifdef USER_PROGRAM
     if (oldThread->space != NULL) {	    // if there is an address space
         oldThread->RestoreUserState();     // to restore, do it.
-	oldThread->space->RestoreState();
+	    oldThread->space->RestoreState();
     }
-#endif
 }
 
 //----------------------------------------------------------------------
@@ -176,7 +162,7 @@ Scheduler::CheckToBeDestroyed()
 {
     if (toBeDestroyed != NULL) {
         delete toBeDestroyed;
-	toBeDestroyed = NULL;
+	    toBeDestroyed = NULL;
     }
 }
  

@@ -37,8 +37,8 @@ class ListElement {
 // The class has been tested only for primitive types (ints, pointers);
 // no guarantees it will work in general.  For instance, all types
 // to be inserted into a list must have a "==" operator defined.
-template <class T>
-class ListIterator;
+
+template <class T> class ListIterator;
 
 template <class T>
 class List {
@@ -75,7 +75,7 @@ class List {
     ListElement<T> *last;	// Last element of list
     int numInList;		// number of elements in list
 
-friend class ListIterator<T>;
+    friend class ListIterator<T>;
 };
 
 // The following class defines a "sorted list" -- a singly linked list of

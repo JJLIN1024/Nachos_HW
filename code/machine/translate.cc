@@ -193,8 +193,8 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 
 // check for alignment errors
     if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
-	DEBUG(dbgAddr, "Alignment problem at " << virtAddr << ", size " << size);
-	return AddressErrorException;
+		DEBUG(dbgAddr, "Alignment problem at " << virtAddr << ", size " << size);
+		return AddressErrorException;
     }
     
     // we must have either a TLB or a page table, but not both!
@@ -217,7 +217,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 	entry = &pageTable[vpn];
     } else {
         for (entry = NULL, i = 0; i < TLBSize; i++)
-    	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
+    	    if (tlb[i].valid && (tlb[i].virtualPage == ((int)vpn))) {
 		entry = &tlb[i];			// FOUND!
 		break;
 	    }

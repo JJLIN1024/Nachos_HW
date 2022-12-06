@@ -64,18 +64,31 @@ ConsoleInput::~ConsoleInput()
 void
 ConsoleInput::CallBack()
 {
-    char c;
+  char c;
+  int readCount;
 
     ASSERT(incoming == EOF);
     if (!PollFile(readFileNo)) { // nothing to be read
         // schedule the next time to poll for a packet
         kernel->interrupt->Schedule(this, ConsoleTime, ConsoleReadInt);
     } else { 
-    	// otherwise, read character and tell user about it
-    	Read(readFileNo, &c, sizeof(char));
-    	incoming = c;
-    	kernel->stats->numConsoleCharsRead++;
-    	callWhenAvail->CallBack();
+    	// otherwise, try to read a character
+    	readCount = ReadPartial(readFileNo, &c, sizeof(char));
+	if (readCount == 0) {
+	   // this seems to happen at end of file, when the
+	   // console input is a regular file
+	   // don't schedule an interrupt, since there will never
+	   // be any more input
+	   // just do nothing....
+	}
+	else {
+	  // save the character and notify the OS that
+	  // it is available
+	  ASSERT(readCount == sizeof(char));
+	  incoming = c;
+	  kernel->stats->numConsoleCharsRead++;
+	}
+	callWhenAvail->CallBack();
     }
 }
 

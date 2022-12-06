@@ -41,10 +41,8 @@
 #include "utility.h"
 #include "sysdep.h"
 
-#ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
-#endif
 
 // CPU register state to be saved on context switch.  
 // The x86 needs to save only a few registers, 
@@ -58,7 +56,7 @@
 
 // Size of the thread's private execution stack.
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
-const int StackSize = (4 * 1024);	// in words
+const int StackSize = (8 * 1024);	// in words
 
 
 // Thread state
@@ -105,19 +103,11 @@ class Thread {
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
     void Print() { cout << name; }
-
-    void setBurstTime(int t)	{burstTime = t;}
-    int getBurstTime()		{return burstTime;}
-    void setStartTime(int t)	{startTime = t;}
-    int getStartTime()		{return startTime;}
-
-    static void SchedulingTest();
-
-
-
     void SelfTest();		// test whether thread impl is working
+    void MyExec(char *userProgName);
+	int pId;
 
-  private:
+private:
     // some of the private data for this class is listed above
     
     int *stack; 	 	// Bottom of the stack 
@@ -129,11 +119,7 @@ class Thread {
     void StackAllocate(VoidFunctionPtr func, void *arg);
     				// Allocate a stack for thread.
 				// Used internally by Fork()
-    int burstTime;	// predicted burst time
-    int startTime;	// the start time of the thread
 
-
-#ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 
 // one for its state while executing user code, one for its state 
 // while executing kernel code.
@@ -145,7 +131,6 @@ class Thread {
     void RestoreUserState();		// restore user-level register state
 
     AddrSpace *space;			// User code this thread is running.
-#endif
 };
 
 // external function, dummy routine whose sole job is to call Thread::Print

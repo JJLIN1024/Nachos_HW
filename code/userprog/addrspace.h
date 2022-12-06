@@ -15,32 +15,38 @@
 
 #include "copyright.h"
 #include "filesys.h"
-#include <string.h>
 
 #define UserStackSize		1024 	// increase this as necessary!
 
 class AddrSpace {
-  public:
+    public:
     AddrSpace();			// Create an address space.
+    // AddrSpace(OpenFile *executable);
     ~AddrSpace();			// De-allocate an address space
 
-    void Execute(char *fileName);	// Run the the program
-					// stored in the file "executable"
+    bool Load(char *fileName);		// Load a program into addr space from
+                                        // a file
+					// return false if not found
+
+    void Execute();             	// Run a program
+					// assumes the program has already
+                                        // been loaded
 
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch 
 
-    static bool usedPhyPage[NumPhysPages]; // Physical page usage information 
-    static int numFreePage;
-    
-  private:
+    // Translate virtual address _vaddr_
+    // to physical address _paddr_. _mode_
+    // is 0 for Read, 1 for Write.
+    ExceptionType Translate(unsigned int vaddr, unsigned int *paddr, int mode);
+	
+    static bool phyPageStatus[NumPhysPages];
+	static int numFreePages;
+ 	private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
-
-    bool Load(char *fileName);		// Load the program into memory
-					// return false if not found
 
     void InitRegisters();		// Initialize user-level CPU registers,
 					// before jumping to user code

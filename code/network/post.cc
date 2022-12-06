@@ -161,7 +161,7 @@ PostOfficeInput::PostOfficeInput(int nBoxes)
 
     Thread *t = new Thread("postal worker");
 
-    t->Fork((VoidFunctionPtr) &PostOfficeInput::PostalDelivery_st, this);
+    t->Fork(PostOfficeInput::PostalDelivery, this);
 }
 
 //----------------------------------------------------------------------
@@ -180,21 +180,6 @@ PostOfficeInput::~PostOfficeInput()
 }
 
 //----------------------------------------------------------------------
-// PostOffice::PostalDelivery_st
-//      static member function of PostOffice::PostalDelivery
-//
-//      Incoming messages have had the PacketHeader stripped off,
-//      but the MailHeader is still tacked on the front of the data.
-//----------------------------------------------------------------------
-
-void
-PostOfficeInput::PostalDelivery_st( PostOfficeInput * input )
-{
-    input->PostalDelivery();
-}
-
-
-//----------------------------------------------------------------------
 // PostOffice::PostalDelivery
 // 	Wait for incoming messages, and put them in the right mailbox.
 //
@@ -203,16 +188,17 @@ PostOfficeInput::PostalDelivery_st( PostOfficeInput * input )
 //----------------------------------------------------------------------
 
 void
-PostOfficeInput::PostalDelivery()
+PostOfficeInput::PostalDelivery(void* data)
 {
+    PostOfficeInput* _this = (PostOfficeInput*)data;
     PacketHeader pktHdr;
     MailHeader mailHdr;
     char *buffer = new char[MaxPacketSize];
 
     for (;;) {
         // first, wait for a message
-        messageAvailable->P();	
-        pktHdr = network->Receive(buffer);
+        _this->messageAvailable->P();	
+        pktHdr = _this->network->Receive(buffer);
 
         mailHdr = *(MailHeader *)buffer;
         if (debug->IsEnabled('n')) {
@@ -221,11 +207,11 @@ PostOfficeInput::PostalDelivery()
         }
 
 	// check that arriving message is legal!
-	ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
+	ASSERT(0 <= mailHdr.to && mailHdr.to < _this->numBoxes);
 	ASSERT(mailHdr.length <= MaxMailSize);
 
 	// put into mailbox
-        boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
+        _this->boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeader));
     }
 }
 
@@ -275,12 +261,10 @@ PostOfficeInput::CallBack()
 //	  be delivered (e.g., reliability = 1 means the network never
 //	  drops any packets; reliability = 0 means the network never
 //	  delivers any packets)
-//	"nBoxes" is the number of mail boxes in this Post Office
 //----------------------------------------------------------------------
 
-PostOfficeOutput::PostOfficeOutput(double reliability, int nBoxes)
+PostOfficeOutput::PostOfficeOutput(double reliability)
 {
-    numBoxes = nBoxes;
     messageSent = new Semaphore("message sent", 0);
     sendLock = new Lock("message send lock");
 
@@ -323,7 +307,7 @@ PostOfficeOutput::Send(PacketHeader pktHdr, MailHeader mailHdr, char* data)
 	PrintHeader(pktHdr, mailHdr);
     }
     ASSERT(mailHdr.length <= MaxMailSize);
-    ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
+    ASSERT(0 <= mailHdr.to);
     
     // fill in pktHdr, for the Network layer
     pktHdr.from = kernel->hostName;

@@ -11,9 +11,7 @@
 //	We define two separate implementations of the file system. 
 //	The "STUB" version just re-defines the Nachos file system 
 //	operations as operations on the native UNIX file system on the machine
-//	running the Nachos simulation.  This is provided in case the
-//	multiprogramming and virtual memory assignments (which make use
-//	of the file system) are done before the file system assignment.
+//	running the Nachos simulation.
 //
 //	The other version is a "real" file system, built on top of 
 //	a disk simulator.  The disk is simulated using the native UNIX 
@@ -36,6 +34,7 @@
 #define FS_H
 
 #include "copyright.h"
+#include "sysdep.h"
 #include "openfile.h"
 
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
@@ -43,9 +42,9 @@
 				// implementation is available
 class FileSystem {
   public:
-    FileSystem(bool format=true) {}
+    FileSystem() {}
 
-    bool Create(char *name) { 
+    bool Create(char *name, int initialSize) {
 	int fileDescriptor = OpenForWrite(name);
 
 	if (fileDescriptor == -1) return FALSE;
@@ -67,7 +66,7 @@ class FileSystem {
 #else // FILESYS
 class FileSystem {
   public:
-    FileSystem(bool format=true);		// Initialize the file system.
+    FileSystem(bool format);		// Initialize the file system.
 					// Must be called *after* "synchDisk" 
 					// has been initialized.
     					// If "format", there is nothing on

@@ -105,20 +105,13 @@ SynchList<T>::Apply(void (*func)(T))
 
 template <class T>
 void
-SynchList<T>::SelfTestHelper() 
+SynchList<T>::SelfTestHelper (void* data) 
 {
+    SynchList<T>* _this = (SynchList<T>*)data;
     for (int i = 0; i < 10; i++) {
-        this->Append(selfTestPing->RemoveFront());
+        _this->Append(_this->selfTestPing->RemoveFront());
     }
 }
-
-
-template <class T>
-void
-SynchList<T>::SelfTestHelper_st(SynchList<T> *slist)
-{
-    slist->SelfTestHelper();
-}	
 
 template <class T>
 void
@@ -128,7 +121,7 @@ SynchList<T>::SelfTest(T val)
     
     ASSERT(list->IsEmpty());
     selfTestPing = new SynchList<T>;
-    helper->Fork((VoidFunctionPtr) &SynchList<T>::SelfTestHelper_st, this);
+    helper->Fork(SynchList<T>::SelfTestHelper, this);
     for (int i = 0; i < 10; i++) {
         selfTestPing->Append(val);
 	ASSERT(val == this->RemoveFront());

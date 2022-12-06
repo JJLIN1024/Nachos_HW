@@ -12,7 +12,7 @@
 //	by the simulator.  Each memory reference is translated, checked
 //	for errors, etc.
 //
-//  DO NOT CHANGE -- part of the machine emulation
+//  DO NOT CHANGE EXCEPT AS NOTED BELOW -- part of the machine emulation
 //
 // Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
@@ -27,10 +27,16 @@
 
 // Definitions related to the size, and format of user memory
 
-const unsigned int PageSize = 128; 		// set the page size equal to
+const int PageSize = 128; 		// set the page size equal to
 					// the disk sector size, for simplicity
 
-const unsigned int NumPhysPages = 128;
+//
+// You are allowed to change this value.
+// Doing so will change the number of pages of physical memory
+// available on the simulated machine.
+//
+const int NumPhysPages = 128;
+
 const int MemorySize = (NumPhysPages * PageSize);
 const int TLBSize = 4;			// if there is a TLB, make it small
 
@@ -131,7 +137,12 @@ class Machine {
 
     TranslationEntry *pageTable;
     unsigned int pageTableSize;
+
     bool ReadMem(int addr, int size, int* value);
+    bool WriteMem(int addr, int size, int value);
+    				// Read or write 1, 2, or 4 bytes of virtual 
+				// memory (at addr).  Return FALSE if a 
+				// correct translation couldn't be found.
   private:
 
 // Routines internal to the machine simulation -- DO NOT call these directly
@@ -141,11 +152,7 @@ class Machine {
     void OneInstruction(Instruction *instr); 	
     				// Run one instruction of a user program.
     
-//    bool ReadMem(int addr, int size, int* value);
-    bool WriteMem(int addr, int size, int value);
-    				// Read or write 1, 2, or 4 bytes of virtual 
-				// memory (at addr).  Return FALSE if a 
-				// correct translation couldn't be found.
+
 
     ExceptionType Translate(int virtAddr, int* physAddr, int size,bool writing);
     				// Translate an address, and check for 
@@ -171,7 +178,7 @@ class Machine {
     int runUntilTime;		// drop back into the debugger when simulated
 				// time reaches this value
 
- friend class Interrupt;		// calls DelayedLoad()    
+    friend class Interrupt;		// calls DelayedLoad()    
 };
 
 extern void ExceptionHandler(ExceptionType which);

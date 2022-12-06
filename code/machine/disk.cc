@@ -15,8 +15,9 @@
 
 #include "copyright.h"
 #include "disk.h"
-#include "main.h"
 #include "debug.h"
+#include "sysdep.h"
+#include "main.h"
 
 // We put a magic number at the front of the UNIX file representing the
 // disk, to make it less likely we will accidentally treat a useful file 
@@ -33,11 +34,10 @@ const int DiskSize = (MagicSize + (NumSectors * SectorSize));
 //	if it doesn't exist), and check the magic number to make sure it's 
 // 	ok to treat it as Nachos disk storage.
 //
-//	"name" -- text name of the file simulating the Nachos disk
 //	"toCall" -- object to call when disk read/write request completes
 //----------------------------------------------------------------------
 
-Disk::Disk(char* name, CallBackObj *toCall)
+Disk::Disk(CallBackObj *toCall)
 {
     int magicNum;
     int tmp = 0;
@@ -47,12 +47,13 @@ Disk::Disk(char* name, CallBackObj *toCall)
     lastSector = 0;
     bufferInit = 0;
     
-    fileno = OpenForReadWrite(name, FALSE);
+    sprintf(diskname,"DISK_%d",kernel->hostName);
+    fileno = OpenForReadWrite(diskname, FALSE);
     if (fileno >= 0) {		 	// file exists, check magic number 
 	Read(fileno, (char *) &magicNum, MagicSize);
 	ASSERT(magicNum == MagicNumber);
     } else {				// file doesn't exist, create it
-        fileno = OpenForWrite(name);
+        fileno = OpenForWrite(diskname);
 	magicNum = MagicNumber;  
 	WriteFile(fileno, (char *) &magicNum, MagicSize); // write magic number
 

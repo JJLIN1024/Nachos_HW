@@ -24,6 +24,7 @@
 
 // this is put at the top of the execution stack, for detecting stack overflows
 const int STACK_FENCEPOST = 0xdedbeef;
+// int numThreads = 0;
 
 //----------------------------------------------------------------------
 // Thread::Thread
@@ -35,7 +36,12 @@ const int STACK_FENCEPOST = 0xdedbeef;
 
 Thread::Thread(char* threadName)
 {
-    name = threadName;
+    // name = threadName;
+    int length = 0;
+    while (threadName[length++] != 0);
+    name = new char[length+1];
+    strcpy(name, threadName);
+
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
@@ -44,9 +50,7 @@ Thread::Thread(char* threadName)
 					// new thread ignores contents 
 					// of machine registers
     }
-#ifdef USER_PROGRAM
     space = NULL;
-#endif
 }
 
 //----------------------------------------------------------------------
@@ -67,7 +71,9 @@ Thread::~Thread()
 
     ASSERT(this != kernel->currentThread);
     if (stack != NULL)
-	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
+	    DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
+    if (name != NULL)
+        delete[] name;
 }
 
 //----------------------------------------------------------------------
@@ -173,11 +179,11 @@ Thread::Begin ()
 void
 Thread::Finish ()
 {
-    (void) kernel->interrupt->SetLevel(IntOff);		
+    (void) kernel->interrupt->SetLevel(IntOff);		   
     ASSERT(this == kernel->currentThread);
     
     DEBUG(dbgThread, "Finishing thread: " << name);
-    
+
     Sleep(TRUE);				// invokes SWITCH
     // not reached
 }
@@ -212,8 +218,8 @@ Thread::Yield ()
     
     nextThread = kernel->scheduler->FindNextToRun();
     if (nextThread != NULL) {
-	kernel->scheduler->ReadyToRun(this);
-	kernel->scheduler->Run(nextThread, FALSE);
+	    kernel->scheduler->ReadyToRun(this);
+	    kernel->scheduler->Run(nextThread, FALSE);
     }
     (void) kernel->interrupt->SetLevel(oldLevel);
 }
@@ -238,20 +244,19 @@ Thread::Yield ()
 //	so that there can't be a time slice between pulling the first thread
 //	off the ready list, and switching to it.
 //----------------------------------------------------------------------
-void
-Thread::Sleep (bool finishing)
-{
+void Thread::Sleep (bool finishing) {
     Thread *nextThread;
-    
+
     ASSERT(this == kernel->currentThread);
     ASSERT(kernel->interrupt->getLevel() == IntOff);
-    
+
     DEBUG(dbgThread, "Sleeping thread: " << name);
 
     status = BLOCKED;
-    while ((nextThread = kernel->scheduler->FindNextToRun()) == NULL)
-	kernel->interrupt->Idle();	// no one to run, wait for an interrupt
-    
+    while ((nextThread = kernel->scheduler->FindNextToRun()) == NULL) {
+        kernel->interrupt->Idle();	// no one to run, wait for an interrupt
+    }
+
     // returns when it's time for us to run
     kernel->scheduler->Run(nextThread, finishing); 
 }
@@ -355,15 +360,14 @@ Thread::StackAllocate (VoidFunctionPtr func, void *arg)
     machineState[InitialArgState] = arg;
     machineState[WhenDonePCState] = PLabelToAddr(ThreadFinish);
 #else
-    machineState[PCState] =(void *)ThreadRoot;
-    machineState[StartupPCState] = (void *)ThreadBegin;
-    machineState[InitialPCState] = (void *)func;
-    machineState[InitialArgState] = (void *)arg;
-    machineState[WhenDonePCState] = (void *)ThreadFinish;
+    machineState[PCState] = (void*)ThreadRoot;
+    machineState[StartupPCState] = (void*)ThreadBegin;
+    machineState[InitialPCState] = (void*)func;
+    machineState[InitialArgState] = (void*)arg;
+    machineState[WhenDonePCState] = (void*)ThreadFinish;
 #endif
 }
 
-#ifdef USER_PROGRAM
 #include "machine.h"
 
 //----------------------------------------------------------------------
@@ -379,7 +383,7 @@ void
 Thread::SaveUserState()
 {
     for (int i = 0; i < NumTotalRegs; i++)
-	userRegisters[i] = kernel->machine->ReadRegister(i);
+	    userRegisters[i] = kernel->machine->ReadRegister(i);
 }
 
 //----------------------------------------------------------------------
@@ -395,10 +399,9 @@ void
 Thread::RestoreUserState()
 {
     for (int i = 0; i < NumTotalRegs; i++)
-	kernel->machine->WriteRegister(i, userRegisters[i]);
+	    kernel->machine->WriteRegister(i, userRegisters[i]);
 }
 
-#endif
 
 //----------------------------------------------------------------------
 // SimpleThread
@@ -415,7 +418,7 @@ SimpleThread(int which)
     int num;
     
     for (num = 0; num < 5; num++) {
-	cout << "*** thread " << which << " looped " << num << " times\n";
+	    cout << "*** thread " << which << " looped " << num << " times\n";
         kernel->currentThread->Yield();
     }
 }
@@ -427,41 +430,6 @@ SimpleThread(int which)
 //----------------------------------------------------------------------
 
 void
-threadRunner() {
-    Thread *thread = kernel->currentThread;
-    while (thread->getBurstTime() > 0) {
-        thread->setBurstTime(thread->getBurstTime() - 1);
-        kernel->interrupt->OneTick();
-        printf("%s's burst time left: %d(s)\n", kernel->currentThread->getName(), kernel->currentThread->getBurstTime());
-    }
-}
-
-void
-Thread::SchedulingTest()
-{   
-    
-    // test case 1
-    const int thread_num = 4;
-    char *name[thread_num] = {"t1", "t2", "t3", "t4"};
-    int thread_burst[thread_num] = {3, 3, 1, 9};
-    
-    // // test case 2
-    // const int thread_num = 5;
-    // char *name[thread_num] = {"t5", "t6", "t7", "t8", "t9"};
-    // int thread_burst[thread_num] = {1, 6, 3, 9, 4};
-
-    
-    Thread *t;
-    for (int i = 0; i < thread_num; i ++) {
-        t = new Thread(name[i]);
-        t->setBurstTime(thread_burst[i]);
-        t->Fork((VoidFunctionPtr) threadRunner, (void *)NULL);
-    }
-    kernel->currentThread->Yield();
-}
-
-
-void
 Thread::SelfTest()
 {
     DEBUG(dbgThread, "Entering Thread::SelfTest");
@@ -469,6 +437,6 @@ Thread::SelfTest()
     Thread *t = new Thread("forked thread");
 
     t->Fork((VoidFunctionPtr) SimpleThread, (void *) 1);
+    kernel->currentThread->Yield();
     SimpleThread(0);
 }
-

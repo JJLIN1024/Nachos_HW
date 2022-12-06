@@ -4,7 +4,8 @@
 //	(directly connected) machines.  Messages can be dropped by
 //	the network, but they are never corrupted.
 //
-// 	The US Post Office delivers mail to the addressed mailbox. 
+// 	The US Post Office (and Canada Post! -KMS)
+//      delivers mail to the addressed mailbox. 
 // 	By analogy, our post office delivers packets to a specific buffer 
 // 	(MailBox), based on the mailbox number stored in the packet header.
 // 	Mail waits in the box until a thread asks for it; if the mailbox
@@ -110,8 +111,9 @@ class PostOfficeInput : public CallBackObj {
 		MailHeader *mailHdr, char *data);
     				// Retrieve a message from "box".  Wait if
 				// there is no message in the box.
-    static void PostalDelivery_st( PostOfficeInput *);
-    void PostalDelivery();	// Wait for incoming messages, 
+
+    static void PostalDelivery(void* data);
+				// Wait for incoming messages, 
 				// and then put them in the correct mailbox
 
     void CallBack();		// Called when incoming packet has arrived 
@@ -127,11 +129,10 @@ class PostOfficeInput : public CallBackObj {
 
 class PostOfficeOutput : public CallBackObj {
   public:
-    PostOfficeOutput(double reliability, int nBoxes);
+    PostOfficeOutput(double reliability);
 				// Allocate and initialize output
 				//   "reliability" is how many packets
 				//   get dropped by the underlying network
-				//   "nBoxes" is # of mailboxes on remote side
     ~PostOfficeOutput();	// De-allocate Post Office data
 
     void Send(PacketHeader pktHdr, MailHeader mailHdr, char *data);
@@ -146,6 +147,5 @@ class PostOfficeOutput : public CallBackObj {
     NetworkOutput *network;	// Physical network connection
     Semaphore *messageSent;	// V'ed when next message can be sent to network
     Lock *sendLock;		// Only one outgoing message at a time
-    int numBoxes;		// Number of mail boxes on *remote* side
 };
 #endif

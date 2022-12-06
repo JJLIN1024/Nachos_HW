@@ -35,4 +35,4 @@
 typedef void (*VoidFunctionPtr)(void *arg); 
 typedef void (*VoidNoArgFunctionPtr)(); 
 
-#endif //UTILITY_H
+#endif // UTILITY_H

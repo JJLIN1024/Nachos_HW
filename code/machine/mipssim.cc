@@ -10,12 +10,18 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
+// Simulation fixes done by Peter E Reissner, class of Winter 1994/95 (York)
+// I've not been able to test this extensively.
+// Ported to newer version of Nachos at Waterloo by Scott Graham (Mar 99).
+
+
 #include "copyright.h"
 
 #include "debug.h"
 #include "machine.h"
 #include "mipssim.h"
 #include "main.h"
+
 
 static void Mult(int a, int b, bool signedArith, int* hiPtr, int* loPtr);
 
@@ -48,21 +54,24 @@ class Instruction {
 //	times concurrently -- one for each thread executing user code.
 //----------------------------------------------------------------------
 
-void
-Machine::Run()
-{
+void Machine::Run() {
     Instruction *instr = new Instruction;  // storage for decoded instruction
 
     if (debug->IsEnabled('m')) {
         cout << "Starting program in thread: " << kernel->currentThread->getName();
-	cout << ", at time: " << kernel->stats->totalTicks << "\n";
+		cout << ", at time: " << kernel->stats->totalTicks << "\n";
     }
     kernel->interrupt->setStatus(UserMode);
+	
     for (;;) {
         OneInstruction(instr);
-	kernel->interrupt->OneTick();
-	if (singleStep && (runUntilTime <= kernel->stats->totalTicks))
-	  Debugger();
+		
+		kernel->interrupt->OneTick();
+		if (singleStep && (runUntilTime <= kernel->stats->totalTicks))
+	  		Debugger();
+
+		// Our custom code.
+		kernel->currentThread->Yield();
     }
 }
 
@@ -115,6 +124,10 @@ TypeToReg(RegType reg, Instruction *instr)
 void
 Machine::OneInstruction(Instruction *instr)
 {
+#ifdef SIM_FIX
+    int byte;       // described in Kane for LWL,LWR,...
+#endif
+
     int raw;
     int nextLoadReg = 0; 	
     int nextLoadValue = 0; 	// record delayed load operation, to apply
@@ -303,6 +316,20 @@ Machine::OneInstruction(Instruction *instr)
       case OP_LWL:	  
 	tmp = registers[instr->rs] + instr->extra;
 
+#ifdef SIM_FIX
+	// The only difference between this code and the BIG ENDIAN code
+        // is that the ReadMem call is guaranteed an aligned access as it
+        // should be (Kane's book hides the fact that all memory access
+        // are done using aligned loads - what the instruction asks for
+        // is a arbitrary) This is the whole purpose of LWL and LWR etc.
+        // Then the switch uses  3 - (tmp & 0x3)  instead of (tmp & 0x3)
+
+        byte = tmp & 0x3;
+        // DEBUG('P', "Addr 0x%X\n",tmp-byte);
+
+        if (!ReadMem(tmp-byte, 4, &value))
+            return;
+#else
 	// ReadMem assumes all 4 byte requests are aligned on an even 
 	// word boundary.  Also, the little endian/big endian swap code would
         // fail (I think) if the other cases are ever exercised.
@@ -310,11 +337,18 @@ Machine::OneInstruction(Instruction *instr)
 
 	if (!ReadMem(tmp, 4, &value))
 	    return;
+#endif
+
 	if (registers[LoadReg] == instr->rt)
 	    nextLoadValue = registers[LoadValueReg];
 	else
 	    nextLoadValue = registers[instr->rt];
-	switch (tmp & 0x3) {
+#ifdef SIM_FIX
+	switch (3 - byte) 
+#else
+	switch (tmp & 0x3)
+#endif
+	  {
 	  case 0:
 	    nextLoadValue = value;
 	    break;
@@ -334,6 +368,20 @@ Machine::OneInstruction(Instruction *instr)
       case OP_LWR:
 	tmp = registers[instr->rs] + instr->extra;
 
+#ifdef SIM_FIX
+        // The only difference between this code and the BIG ENDIAN code
+        // is that the ReadMem call is guaranteed an aligned access as it
+        // should be (Kane's book hides the fact that all memory access
+        // are done using aligned loads - what the instruction asks 
+        // for is a arbitrary) This is the whole purpose of LWL and LWR etc.
+        // Then the switch uses  3 - (tmp & 0x3)  instead of (tmp & 0x3)
+
+        byte = tmp & 0x3;
+        // DEBUG('P', "Addr 0x%X\n",tmp-byte);
+
+        if (!ReadMem(tmp-byte, 4, &value))
+            return;
+#else
 	// ReadMem assumes all 4 byte requests are aligned on an even 
 	// word boundary.  Also, the little endian/big endian swap code would
         // fail (I think) if the other cases are ever exercised.
@@ -341,11 +389,19 @@ Machine::OneInstruction(Instruction *instr)
 
 	if (!ReadMem(tmp, 4, &value))
 	    return;
+#endif
+
 	if (registers[LoadReg] == instr->rt)
 	    nextLoadValue = registers[LoadValueReg];
 	else
 	    nextLoadValue = registers[instr->rt];
-	switch (tmp & 0x3) {
+
+#ifdef SIM_FIX
+	switch (3 - byte) 
+#else
+	switch (tmp & 0x3)
+#endif
+	  {
 	  case 0:
 	    nextLoadValue = (nextLoadValue & 0xffffff00) |
 		((value >> 24) & 0xff);
@@ -396,7 +452,7 @@ Machine::OneInstruction(Instruction *instr)
 	break;
 	
       case OP_OR:
-	registers[instr->rd] = registers[instr->rs] | registers[instr->rs];
+	registers[instr->rd] = registers[instr->rs] | registers[instr->rt];
 	break;
 	
       case OP_ORI:
@@ -500,13 +556,35 @@ Machine::OneInstruction(Instruction *instr)
       case OP_SWL:	  
 	tmp = registers[instr->rs] + instr->extra;
 
+#ifdef SIM_FIX
+        // The only difference between this code and the BIG ENDIAN code
+        // is that the ReadMem call is guaranteed an aligned access as it
+        // should be (Kane's book hides the fact that all memory access
+        // are done using aligned loads - what the instruction asks for
+        // is a arbitrary) This is the whole purpose of LWL and LWR etc.
+
+        byte = tmp & 0x3;
+        // DEBUG('P', "Addr 0x%X\n",tmp-byte);
+        if (!ReadMem(tmp-byte, 4, &value))
+            return;
+
+        // DEBUG('P', "Value 0x%X\n",value);
+#else
+
 	// The little endian/big endian swap code would
         // fail (I think) if the other cases are ever exercised.
 	ASSERT((tmp & 0x3) == 0);  
 
 	if (!ReadMem((tmp & ~0x3), 4, &value))
 	    return;
-	switch (tmp & 0x3) {
+#endif
+
+#ifdef SIM_FIX
+	switch( 3 - byte )
+#else
+	  switch (tmp & 0x3) 
+#endif // SIM_FIX
+	    {
 	  case 0:
 	    value = registers[instr->rt];
 	    break;
@@ -523,21 +601,50 @@ Machine::OneInstruction(Instruction *instr)
 					    0xff);
 	    break;
 	}
-	if (!WriteMem((tmp & ~0x3), 4, value))
-	    return;
+#ifndef SIM_FIX
+        if (!WriteMem((tmp & ~0x3), 4, value))
+            return;
+#else
+        // DEBUG('P', "Value 0x%X\n",value);
+
+        if (!WriteMem((tmp - byte), 4, value))
+            return;
+#endif // SIM_FIX
 	break;
     	
       case OP_SWR:	  
 	tmp = registers[instr->rs] + instr->extra;
 
-	// The little endian/big endian swap code would
+#ifndef SIM_FIX
+        // The little endian/big endian swap code would
         // fail (I think) if the other cases are ever exercised.
-	ASSERT((tmp & 0x3) == 0);  
+        ASSERT((tmp & 0x3) == 0);  
 
-	if (!ReadMem((tmp & ~0x3), 4, &value))
-	    return;
-	switch (tmp & 0x3) {
-	  case 0:
+        if (!ReadMem((tmp & ~0x3), 4, &value))
+            return;
+#else
+        // The only difference between this code and the BIG ENDIAN code
+        // is that the ReadMem call is guaranteed an aligned access as 
+        // it should be (Kane's book hides the fact that all memory 
+        // access are done using aligned loads - what the instruction 
+        // asks for is a arbitrary) This is the whole purpose of LWL 
+        // and LWR etc.
+
+        byte = tmp & 0x3;
+        // DEBUG('P', "Addr 0x%X\n",tmp-byte);
+
+        if (!ReadMem(tmp-byte, 4, &value))
+            return;
+        // DEBUG('P', "Value 0x%X\n",value);
+#endif // SIM_FIX
+
+#ifndef SIM_FIX
+        switch (tmp & 0x3) 
+#else
+	  switch( 3 - byte ) 
+#endif // SIM_FIX
+	    {
+	    case 0:
 	    value = (value & 0xffffff) | (registers[instr->rt] << 24);
 	    break;
 	  case 1:
@@ -550,14 +657,23 @@ Machine::OneInstruction(Instruction *instr)
 	    value = registers[instr->rt];
 	    break;
 	}
-	if (!WriteMem((tmp & ~0x3), 4, value))
-	    return;
+
+#ifndef SIM_FIX
+        if (!WriteMem((tmp & ~0x3), 4, value))
+            return;
+#else
+        // DEBUG('P', "Value 0x%X\n",value);
+
+        if (!WriteMem((tmp - byte), 4, value))
+            return;
+#endif // SIM_FIX
+
+
 	break;
     	
       case OP_SYSCALL:
 	RaiseException(SyscallException, 0);
-//	return; 
-	break;
+	return; 
 	
       case OP_XOR:
 	registers[instr->rd] = registers[instr->rs] ^ registers[instr->rt];

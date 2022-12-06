@@ -14,7 +14,6 @@
 //	Also, this implementation has the restriction that the size
 //	of the directory cannot expand.  In other words, once all the
 //	entries in the directory are used, no more files can be created.
-//	Fixing this is one of the parts to the assignment.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
@@ -24,8 +23,6 @@
 #include "utility.h"
 #include "filehdr.h"
 #include "directory.h"
-#include <stdio.h>
-#include <string.h>
 
 //----------------------------------------------------------------------
 // Directory::Directory
@@ -111,9 +108,9 @@ int
 Directory::Find(char *name)
 {
     int i = FindIndex(name);
-
+    
     if (i != -1)
-	return table[i].sector;
+	    return table[i].sector;
     return -1;
 }
 

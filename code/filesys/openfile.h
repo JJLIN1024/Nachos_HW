@@ -11,7 +11,7 @@
 //	operations into read and write disk sector requests. 
 //	In this baseline implementation of the file system, we don't 
 //	worry about concurrent accesses to the file system
-//	by different threads -- this is part of the assignment.
+//	by different threads.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
@@ -22,6 +22,7 @@
 
 #include "copyright.h"
 #include "utility.h"
+#include "sysdep.h"
 
 #ifdef FILESYS_STUB			// Temporarily implement calls to 
 					// Nachos file system as calls to UNIX!

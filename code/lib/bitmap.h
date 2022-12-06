@@ -30,11 +30,11 @@ const int BitsInWord = sizeof(unsigned int) * BitsInByte;
 // Each bit represents whether the corresponding sector or page is
 // in use or free.
 
-class BitMap {
+class Bitmap {
   public:
-    BitMap(int numItems);	// Initialize a bitmap, with "numItems" bits
+    Bitmap(int numItems);	// Initialize a bitmap, with "numItems" bits
 				// initially, all bits are cleared.
-    ~BitMap();			// De-allocate bitmap
+    ~Bitmap();			// De-allocate bitmap
     
     void Mark(int which);   	// Set the "nth" bit
     void Clear(int which);  	// Clear the "nth" bit

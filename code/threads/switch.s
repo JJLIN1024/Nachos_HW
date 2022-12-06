@@ -73,7 +73,7 @@ ThreadRoot:
 	jal	StartupPC	# call startup procedure
 	move	a0, InitialArg
 	jal	InitialPC	# call main procedure
-	jal 	WhenDonePC	# when we're done, call clean up procedure
+	jal 	WhenDonePC	# when done, call clean up procedure
 
 	# NEVER REACHED
 	.end ThreadRoot
@@ -298,6 +298,7 @@ SWITCH
         .align  2
 
         .globl  ThreadRoot
+        .globl  _ThreadRoot	
 
 /* void ThreadRoot( void )
 **
@@ -307,13 +308,14 @@ SWITCH
 **      esi     points to thread function
 **      edi     point to Thread::Finish()
 */
+_ThreadRoot:	
 ThreadRoot:
         pushl   %ebp
         movl    %esp,%ebp
         pushl   InitialArg
-        call    StartupPC
-        call    InitialPC
-        call    WhenDonePC
+        call    *StartupPC
+        call    *InitialPC
+        call    *WhenDonePC
 
         # NOT REACHED
         movl    %ebp,%esp
@@ -336,6 +338,8 @@ ThreadRoot:
         .comm   _eax_save,4
 
         .globl  SWITCH
+	.globl  _SWITCH
+_SWITCH:		
 SWITCH:
         movl    %eax,_eax_save          # save the value of eax
         movl    4(%esp),%eax            # move pointer to t1 into eax
@@ -371,8 +375,111 @@ SWITCH:
 #endif // x86
 
 
+#if defined(ApplePowerPC)
 
-#ifdef PowerPC
+	/* The AIX PowerPC code is incompatible with the assembler on MacOS X
+	 * and Linux.  So the SWITCH code was adapted for IBM 750 compatible
+	 * processors, and ThreadRoot is modeled after the more reasonable
+	 * looking ThreadRoot's in this file.
+	 *
+	 * Joshua LeVasseur <jtl@ira.uka.de>
+	 */
+
+	.align	2
+	.globl	_SWITCH
+_SWITCH:
+	stw	r1, 0(r3)	/* Store stack pointer. */
+	stmw	r13, 20(r3)	/* Store general purpose registers 13 - 31. */
+	stfd	f14, 96(r3)	/* Store floating point registers 14 -31. */
+	stfd	f15,  104(r3)
+	stfd	f16,  112(r3)
+	stfd	f17,  120(r3) 
+	stfd	f18,  128(r3) 
+	stfd	f19,  136(r3) 
+	stfd	f20,  144(r3) 
+	stfd	f21,  152(r3) 
+	stfd	f22,  160(r3) 
+	stfd	f23,  168(r3) 
+	stfd	f24,  176(r3) 
+	stfd	f25,  184(r3) 
+	stfd	f26,  192(r3) 
+	stfd	f27,  200(r3) 
+	stfd	f28,  208(r3) 
+	stfd	f29,  216(r3) 
+	stfd	f30,  224(r3) 
+	stfd	f31,  232(r3) 
+
+	mflr	r0
+	stw	r0, 244(r3)	/* Spill the link register. */
+
+	mfcr	r12
+	stw	r12, 240(r3)	/* Spill the condition register. */
+
+	lwz	r1, 0(r4)	/* Load the incoming stack pointer. */
+
+	lwz	r0, 244(r4)	/* Load the incoming link register. */
+	mtlr	r0		/* Restore the link register. */
+
+	lwz	r12, 240(r4)	/* Load the condition register value. */
+	mtcrf	0xff, r12	/* Restore the condition register. */
+
+	lmw	r13, 20(r4)	/* Restore registers r13 - r31. */
+
+	lfd	f14,  96(r4)	/* Restore floating point register f14 - f31. */
+	lfd	f15,  104(r4)
+	lfd	f16,  112(r4)
+	lfd	f17,  120(r4)
+	lfd	f18,  128(r4) 
+	lfd	f19,  136(r4) 
+	lfd	f20,  144(r4) 
+	lfd	f21,  152(r4) 
+	lfd	f22,  160(r4) 
+	lfd	f23,  168(r4) 
+	lfd	f24,  176(r4) 
+	lfd	f25,  184(r4) 
+	lfd	f26,  192(r4) 
+	lfd	f27,  200(r4) 
+	lfd	f28,  208(r4) 
+	lfd	f29,  216(r4) 
+	lfd	f30,  224(r4) 
+	lfd	f31,  232(r4) 
+
+	/* When a thread first starts, the following blr instruction jumps
+	 * to ThreadRoot.  ThreadRoot expects the incoming thread block
+	 * in r4.
+	 */
+	blr	/* Branch to the address held in link register. */
+
+
+	.align	2
+	.globl	_ThreadRoot
+_ThreadRoot:
+	lwz	r20, 16(r4)	/* StartupPCState - ThreadBegin		*/
+	lwz	r21, 8(r4)	/* InitialArgState - arg		*/
+	lwz	r22, 4(r4)	/* InitialPCState - func		*/
+	lwz	r23, 12(r4)	/* WhenDonePCState - ThreadFinish	*/
+
+	/* Call ThreadBegin function. */
+	mtctr	r20		/* The function pointer. */
+	bctrl
+
+	/* Call the target function. */
+	mr	r3, r21		/* Function arg. */
+	mtctr	r22		/* Function pointer. */
+	bctrl
+
+	/* Call the ThreadFinish function. */
+	mtctr	r23
+	bctrl
+
+	/* We shouldn't execute here. */
+1:	b	1b
+
+
+#endif
+
+
+#if defined(PowerPC) && !defined(ApplePowerPC)
                 .globl branch[ds]
                 .csect branch[ds]
                 .long  .branch[PR]
@@ -600,7 +707,7 @@ ThreadRoot:
 	ldgp	gp,0(ra)
 
 	mov	WhenDonePC,pv
-	jsr 	ra,(pv)		# when we're done, call clean up procedure
+	jsr 	ra,(pv)		# when done, call clean up procedure
 	ldgp	gp,0(ra)
 
 	.end ThreadRoot		# NEVER REACHED

@@ -50,6 +50,30 @@ Halt:
 	j	$31
 	.end Halt
 
+	.globl Add
+	.ent	Add
+Add:
+	addiu $2,$0,SC_Add
+	syscall
+	j 	$31
+	.end Add
+
+	.globl ReadNum
+	.ent	ReadNum
+ReadNum:
+	addiu $2,$0,SC_ReadNum
+	syscall
+	j 	$31
+	.end ReadNum
+
+	.globl PrintNum
+	.ent	PrintNum
+PrintNum:
+	addiu $2,$0,SC_PrintNum
+	syscall
+	j 	$31
+	.end PrintNum
+
 	.globl Exit
 	.ent	Exit
 Exit:
@@ -66,6 +90,14 @@ Exec:
 	j	$31
 	.end Exec
 
+	.globl ExecV
+	.ent	ExecV
+ExecV:
+	addiu $2,$0,SC_ExecV
+	syscall
+	j	$31
+	.end ExecV
+
 	.globl Join
 	.ent	Join
 Join:
@@ -81,6 +113,30 @@ Create:
 	syscall
 	j	$31
 	.end Create
+
+	.globl ReadChar
+	.ent	ReadChar
+ReadChar:
+	addiu $2,$0,SC_ReadChar
+	syscall
+	j	$31
+	.end ReadChar
+
+	.globl PrintChar
+	.ent	PrintChar
+PrintChar:
+	addiu $2,$0,SC_PrintChar
+	syscall
+	j	$31
+	.end PrintChar
+
+	.globl Remove
+	.ent	Remove
+Remove:
+	addiu $2,$0,SC_Remove
+	syscall
+	j	$31
+	.end Remove
 
 	.globl Open
 	.ent	Open
@@ -106,6 +162,30 @@ Write:
 	j	$31
 	.end Write
 
+	.globl ReadString
+	.ent	ReadString
+ReadString:
+	addiu $2,$0,SC_ReadString
+	syscall
+	j	$31
+	.end ReadString
+
+	.globl PrintString
+	.ent	PrintString
+PrintString:
+	addiu $2,$0,SC_PrintString
+	syscall
+	j	$31
+	.end PrintString
+
+	.globl RandomNum
+	.ent	RandomNum
+RandomNum:
+	addiu $2,$0,SC_RandomNum
+	syscall
+	j	$31
+	.end RandomNum
+
 	.globl Close
 	.ent	Close
 Close:
@@ -113,6 +193,14 @@ Close:
 	syscall
 	j	$31
 	.end Close
+
+	.globl Seek
+	.ent	Seek
+Seek:
+	addiu $2,$0,SC_Seek
+	syscall
+	j	$31
+	.end Seek
 
         .globl ThreadFork
         .ent    ThreadFork
@@ -130,23 +218,22 @@ ThreadYield:
         j       $31
         .end ThreadYield
 
-	.globl  PrintInt
-	.ent    PrintInt
-PrintInt:
-	addiu   $2,$0,SC_PrintInt
+	.globl ThreadExit
+	.ent    ThreadExit
+ThreadExit:
+	addiu $2, $0, SC_ThreadExit
 	syscall
-	j       $31
-	.end    PrintInt
+	j 	$31
+	.end ThreadExit
 
-    .globl  Sleep
-    .ent    Sleep
-Sleep:
-    addiu   $2,$0,SC_Sleep
-    syscall
-    j       $31
-    .end    Sleep
-
-
+	.globl ThreadJoin
+	.ent    ThreadJoin
+ThreadJoin:
+	addiu $2, $0, SC_ThreadJoin
+	syscall
+	j 	$31
+	.end ThreadJoin
+	
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

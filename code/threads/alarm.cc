@@ -41,65 +41,15 @@ Alarm::Alarm(bool doRandom)
 //
 //	For now, just provide time-slicing.  Only need to time slice 
 //      if we're currently running something (in other words, not idle).
-//	Also, to keep from looping forever, we check if there's
-//	nothing on the ready list, and there are no other pending
-//	interrupts.  In this case, we can safely halt.
 //----------------------------------------------------------------------
 
-void Alarm::CallBack() {
+void 
+Alarm::CallBack() 
+{
     Interrupt *interrupt = kernel->interrupt;
     MachineStatus status = interrupt->getStatus();
-    bool woken = _sleepList.Wakeup();
-
-    if (status == IdleMode && !woken && _sleepList.IsEmpty()) {// is it time to quit?
-        if (!interrupt->AnyFutureInterrupts()) {
-            timer->Disable();   // turn off the timer
-        }
-    } else {                    // there's someone to preempt
-        // cout << "=== interrupt->YieldOnReturn ===" << endl;
-        interrupt->YieldOnReturn();
+    
+    if (status != IdleMode) {
+	interrupt->YieldOnReturn();
     }
 }
-
-void Alarm::WaitUntil(int x) {
-    // turn off interrupt
-    // If we don't turn off interrupt, cpu
-    // will keep receiving interrupt, which
-    // will prevent us from correctly putting the current thread
-    // to sleep(sleep for correct amount of time)
-    IntStatus oldLevel = kernel->interrupt->SetLevel(IntOff);
-    Thread* t = kernel->currentThread;
-
-    cout << "Alarm::WaitUntil go to sleep" << endl;
-    _sleepList.GotoBed(t, x);
-    // turn on interrupt
-    kernel->interrupt->SetLevel(oldLevel);
-}
-
-bool sleepList::IsEmpty() {
-    return _threadlist.size() == 0;
-}
-
-void sleepList::GotoBed(Thread*t, int x) {
-    ASSERT(kernel->interrupt->getLevel() == IntOff);
-    _threadlist.push_back(sleepThread(t, _current_interrupt + x));
-    t->Sleep(false);
-}
-
-bool sleepList::Wakeup() {
-    bool woken = false;
-    _current_interrupt ++;
-    for(std::list<sleepThread>::iterator it = _threadlist.begin();
-        it != _threadlist.end(); ) {
-        if(_current_interrupt >= it->when) {
-            woken = true;
-            cout << "sleepList::Wakeup Thread woken" << endl;
-            kernel->scheduler->ReadyToRun(it->sleeper);
-            it = _threadlist.erase(it);
-        } else {
-            it++;
-        }
-    }
-    return woken;
-}
-
