@@ -185,6 +185,7 @@ ExceptionType
 Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 {
     int i, j;
+    int Swap_out_page;
     unsigned int vpn, offset;
     TranslationEntry *entry;
     unsigned int pageFrame;
@@ -245,7 +246,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
                 //LRU
                      
                 int min = pageTable[0].LRU_times;
-                int Swap_out_page=0;
+                Swap_out_page=0;
                 for(int cc=0;cc<32;cc++){
                     if(min > pageTable[cc].LRU_times){
                         min = pageTable[cc].LRU_times;
