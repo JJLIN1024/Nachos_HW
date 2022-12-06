@@ -24,8 +24,6 @@
 #include "utility.h"
 #include "filehdr.h"
 #include "directory.h"
-#include <stdio.h>
-#include <string.h>
 
 //----------------------------------------------------------------------
 // Directory::Directory

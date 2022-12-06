@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "coff.h"
 #include "noff.h"
@@ -66,7 +67,7 @@ ShortToHost(unsigned short shortword) {
 
 #define ReadStruct(f,s) 	Read(f,(char *)&s,sizeof(s))
 
-extern char *malloc();
+//extern char *malloc();
 char *noffFileName = NULL;
 
 /* read and check for error */

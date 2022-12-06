@@ -13,10 +13,10 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
-#include "debug.h"
+
 #include "utility.h"
 #include "filesys.h"
-#include "main.h"
+#include "system.h"
 #include "thread.h"
 #include "disk.h"
 #include "stats.h"
@@ -48,14 +48,14 @@ Copy(char *from, char *to)
     fseek(fp, 0, 0);
 
 // Create a Nachos file of the same length
-    DEBUG(dbgFile, "Copying file " << from << " size " << fileLength << " to file" << to);
-    if (!kernel->fileSystem->Create(to, fileLength)) {	 // Create Nachos file
+    DEBUG('f', "Copying file %s, size %d, to file %s\n", from, fileLength, to);
+    if (!fileSystem->Create(to, fileLength)) {	 // Create Nachos file
 	printf("Copy: couldn't create output file %s\n", to);
 	fclose(fp);
 	return;
     }
     
-    openFile = kernel->fileSystem->Open(to);
+    openFile = fileSystem->Open(to);
     ASSERT(openFile != NULL);
     
 // Copy the data in TransferSize chunks
@@ -81,7 +81,7 @@ Print(char *name)
     int i, amountRead;
     char *buffer;
 
-    if ((openFile = kernel->fileSystem->Open(name)) == NULL) {
+    if ((openFile = fileSystem->Open(name)) == NULL) {
 	printf("Print: unable to open file %s\n", name);
 	return;
     }
@@ -121,11 +121,11 @@ FileWrite()
 
     printf("Sequential write of %d byte file, in %d byte chunks\n", 
 	FileSize, ContentSize);
-    if (!kernel->fileSystem->Create(FileName, 0)) {
+    if (!fileSystem->Create(FileName, 0)) {
       printf("Perf test: can't create %s\n", FileName);
       return;
     }
-    openFile = kernel->fileSystem->Open(FileName);
+    openFile = fileSystem->Open(FileName);
     if (openFile == NULL) {
 	printf("Perf test: unable to open %s\n", FileName);
 	return;
@@ -151,7 +151,7 @@ FileRead()
     printf("Sequential read of %d byte file, in %d byte chunks\n", 
 	FileSize, ContentSize);
 
-    if ((openFile = kernel->fileSystem->Open(FileName)) == NULL) {
+    if ((openFile = fileSystem->Open(FileName)) == NULL) {
 	printf("Perf test: unable to open file %s\n", FileName);
 	delete [] buffer;
 	return;
@@ -173,13 +173,13 @@ void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
-    kernel->stats->Print();
+    stats->Print();
     FileWrite();
     FileRead();
-    if (!kernel->fileSystem->Remove(FileName)) {
+    if (!fileSystem->Remove(FileName)) {
       printf("Perf test: unable to remove %s\n", FileName);
       return;
     }
-    kernel->stats->Print();
+    stats->Print();
 }
 

@@ -8,7 +8,7 @@
 //
 //  DO NOT CHANGE -- part of the machine emulation
 //
-// Copyright (c) 1992-1996 The Regents of the University of California.
+// Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
@@ -17,7 +17,6 @@
 
 #include "copyright.h"
 #include "utility.h"
-#include "callback.h"
 
 // Network address -- uniquely identifies a machine.  This machine's ID 
 //  is given on the command line.
@@ -43,7 +42,7 @@ class PacketHeader {
 				// data "payload" of the largest packet
 
 
-// The following two classes defines a physical network device.  The network
+// The following class defines a physical network device.  The network
 // is capable of delivering fixed sized packets, in order but unreliably, 
 // to other machines connected to the network.
 //
@@ -53,12 +52,23 @@ class PacketHeader {
 // generator, by changing the arguments to RandomInit() in Initialize().
 // The random number generator is used to choose which packets to drop.
 
-class NetworkInput : public CallBackObj{
+class Network {
   public:
-    NetworkInput(CallBackObj *toCall);
-				// Allocate and initialize network input driver
-    ~NetworkInput();		// De-allocate the network input driver data
+    Network(NetworkAddress addr, double reliability,
+  	  VoidFunctionPtr readAvail, VoidFunctionPtr writeDone, int callArg);
+				// Allocate and initialize network driver
+    ~Network();			// De-allocate the network driver data
     
+    void Send(PacketHeader hdr, char* data);
+    				// Send the packet data to a remote machine,
+				// specified by "hdr".  Returns immediately.
+    				// "writeHandler" is invoked once the next 
+				// packet can be sent.  Note that writeHandler 
+				// is called whether or not the packet is 
+				// dropped, and note that the "from" field of 
+				// the PacketHeader is filled in automatically 
+				// by Send().
+
     PacketHeader Receive(char* data);
     				// Poll the network for incoming messages.  
 				// If there is a packet waiting, copy the 
@@ -66,45 +76,26 @@ class NetworkInput : public CallBackObj{
 				// If no packet is waiting, return a header 
 				// with length 0.
 
-    void CallBack();		// A packet may have arrived.
+    void SendDone();		// Interrupt handler, called when message is 
+				// sent
+    void CheckPktAvail();	// Check if there is an incoming packet
 
   private:
-    int sock;                   // UNIX socket number for incoming packets
-    char sockName[32];          // File name corresponding to UNIX socket
-
-    CallBackObj *callWhenAvail; // Interrupt handler, signalling packet has 
+    NetworkAddress ident;	// This machine's network address
+    double chanceToWork;	// Likelihood packet will be dropped
+    int sock;			// UNIX socket number for incoming packets
+    char sockName[32];		// File name corresponding to UNIX socket
+    VoidFunctionPtr writeHandler; // Interrupt handler, signalling next packet 
+				//      can be sent.  
+    VoidFunctionPtr readHandler;  // Interrupt handler, signalling packet has 
 				// 	arrived.
+    int handlerArg;		// Argument to be passed to interrupt handler
+				//   (pointer to post office)
+    bool sendBusy;		// Packet is being sent.
     bool packetAvail;		// Packet has arrived, can be pulled off of
 				//   network
     PacketHeader inHdr;		// Information about arrived packet
     char inbox[MaxPacketSize];  // Data for arrived packet
-};
-
-class NetworkOutput : public CallBackObj {
-  public:
-    NetworkOutput(double reliability, CallBackObj *toCall);
-				// Allocate and initialize network output driver
-    ~NetworkOutput();		// De-allocate the network input driver data
-    
-    void Send(PacketHeader hdr, char* data);
-    				// Send the packet data to a remote machine,
-				// specified by "hdr".  Returns immediately.
-    				// "callWhenDone" is invoked once the next 
-				// packet can be sent.  Note that callWhenDone 
-				// is called whether or not the packet is 
-				// dropped, and note that the "from" field of 
-				// the PacketHeader is filled in automatically 
-				// by Send().
-
-    void CallBack();		// Interrupt handler, called when message is 
-				// sent
-
-  private:
-    int sock;                   // UNIX socket number for outgoing packets
-    double chanceToWork;	// Likelihood packet will be dropped
-    CallBackObj *callWhenDone;  // Interrupt handler, signalling next packet 
-				//      can be sent.  
-    bool sendBusy;		// Packet is being sent.
 };
 
 #endif // NETWORK_H

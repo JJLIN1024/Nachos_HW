@@ -2,25 +2,36 @@
 #
 # Makefile for:
 #	coff2noff -- converts a normal MIPS executable into a Nachos executable
-#	disasm -- disassembles a normal MIPS executable 
-#			(only works for little endian machines)
+#	disassemble -- disassembles a normal MIPS executable 
 #
-# Copyright (c) 1992-1996 The Regents of the University of California.
+# Copyright (c) 1992 The Regents of the University of California.
 # All rights reserved.  See copyright.h for copyright notice and limitation 
 # of liability and disclaimer of warranty provisions.
 
-include ../Makefile.dep
+# If the host is big endian (SPARC, SNAKE, etc):
+# change to (disassemble and coff2flat don't support big endian yet):
+# CFLAGS= -I./ -I../threads -DHOST_IS_BIG_ENDIAN
+# all: coff2noff
+
 CC=gcc
-CFLAGS=-I../lib -I../threads $(HOST)
+CFLAGS=-I./ -I../threads
 LD=gcc
 
-all: coff2noff 
-#$(DISASM)
+#all: coff2noff disassemble 
+
+all: coff2noff
 
 # converts a COFF file to Nachos object format
 coff2noff: coff2noff.o
 	$(LD) coff2noff.o -o coff2noff
 
+# converts a COFF file to a flat address space (for Nachos version 2)
+coff2flat: coff2flat.o
+	$(LD) coff2flat.o -o coff2flat
+
 # dis-assembles a COFF file
-#disasm: out.o opstrings.o
-#	$(LD) out.o opstrings.o -o disasm
+disassemble: out.o opstrings.o
+	$(LD) out.o opstrings.o -o disassemble
+
+clean:
+	rm -f coff2noff disassemble coff2noff.o coff2flat.o coff2flat out.o opstrings.o

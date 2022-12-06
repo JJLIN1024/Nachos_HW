@@ -21,118 +21,100 @@
 # break the thread system.  You might want to use -fno-inline if
 # you need to call some inline functions from the debugger.
 
-# Copyright (c) 1992-1996 The Regents of the University of California.
+# Copyright (c) 1992 The Regents of the University of California.
 # All rights reserved.  See copyright.h for copyright notice and limitation 
 # of liability and disclaimer of warranty provisions.
 
-CFLAGS = -g -Wall $(INCPATH) $(DEFINES) $(HOST) -DCHANGED
+#CFLAGS = -g -Wall -Wshadow -fwritable-strings $(INCPATH) $(DEFINES) $(HOST) -DCHANGED
+CFLAGS = -Wall -Wshadow $(INCPATH) $(DEFINES) $(HOST) -DCHANGED
 LDFLAGS =
 
 # These definitions may change as the software is updated.
 # Some of them are also system dependent
-CPP=/lib/cpp
-CC = g++ -Wno-deprecated
-LD = g++ -Wno-deprecated
-AS = as
+#CPP=/lib/cpp
+CPP=/usr/bin/cpp
+CC = g++ -m32
+LD = g++ -m32
+AS = as --32
 
 PROGRAM = nachos
 
-THREAD_H = ../lib/bitmap.h\
-	../lib/copyright.h\
-	../lib/debug.h\
-	../lib/hash.h\
-	../lib/libtest.h\
-	../lib/list.h\
-	../lib/sysdep.h\
-	../lib/utility.h\
-	../machine/callback.h\
-	../machine/interrupt.h\
-	../machine/stats.h\
-	../machine/timer.h\
-	../threads/alarm.h\
-	../threads/kernel.h\
-	../threads/main.h\
+THREAD_H =../threads/copyright.h\
+	../threads/list.h\
 	../threads/scheduler.h\
-	../threads/switch.h\
-	../threads/synch.h\
+	../threads/synch.h \
 	../threads/synchlist.h\
+	../threads/system.h\
 	../threads/thread.h\
-	../machine/elevator.h\
-	../machine/elevatortest.h
+	../threads/utility.h\
+	../machine/interrupt.h\
+	../machine/sysdep.h\
+	../machine/stats.h\
+	../machine/timer.h
 
-THREAD_C = ../lib/bitmap.cc\
-	../lib/debug.cc\
-	../lib/hash.cc\
-	../lib/libtest.cc\
-	../lib/list.cc\
-	../lib/sysdep.cc\
-	../machine/interrupt.cc\
-	../machine/stats.cc\
-	../machine/timer.cc\
-	../threads/alarm.cc\
-	../threads/kernel.cc\
-	../threads/main.cc\
+THREAD_C =../threads/main.cc\
+	../threads/list.cc\
 	../threads/scheduler.cc\
-	../threads/synch.cc\
+	../threads/synch.cc \
 	../threads/synchlist.cc\
+	../threads/system.cc\
 	../threads/thread.cc\
-	../machine/elevatortest.cc\
-	../machine/elevator.cc
+	../threads/utility.cc\
+	../threads/threadtest.cc\
+	../machine/interrupt.cc\
+	../machine/sysdep.cc\
+	../machine/stats.cc\
+	../machine/timer.cc
 
 THREAD_S = ../threads/switch.s
 
-THREAD_O = bitmap.o debug.o libtest.o sysdep.o interrupt.o stats.o timer.o \
-	alarm.o kernel.o main.o scheduler.o synch.o thread.o elevator.o \
-	elevatortest.o
+THREAD_O =main.o list.o scheduler.o synch.o synchlist.o system.o thread.o \
+	utility.o threadtest.o interrupt.o stats.o sysdep.o timer.o
 
 USERPROG_H = ../userprog/addrspace.h\
-	../userprog/userkernel.h\
-	../userprog/syscall.h\
-	../userprog/synchconsole.h\
-        ../filesys/filesys.h\
-        ../filesys/openfile.h\
-        ../machine/console.h\
-        ../machine/machine.h\
-        ../machine/mipssim.h\
-        ../machine/translate.h\
-	../filesys/synchdisk.h\
-	../machine/disk.h
+	../userprog/bitmap.h\
+	../filesys/filesys.h\
+	../filesys/openfile.h\
+	../machine/console.h\
+	../machine/machine.h\
+	../machine/mipssim.h\
+	../machine/translate.h
 
 USERPROG_C = ../userprog/addrspace.cc\
-        ../userprog/exception.cc\
-	../userprog/synchconsole.cc\
-	../userprog/userkernel.cc\
-        ../machine/console.cc\
-        ../machine/machine.cc\
-        ../machine/mipssim.cc\
-        ../machine/translate.cc\
+	../userprog/bitmap.cc\
+	../userprog/exception.cc\
+	../userprog/progtest.cc\
+	../machine/console.cc\
+	../machine/machine.cc\
+	../machine/mipssim.cc\
+	../machine/translate.cc
+
+USERPROG_O = addrspace.o bitmap.o exception.o progtest.o console.o machine.o \
+	mipssim.o translate.o
+
+VM_H = 
+VM_C = 
+VM_O = 
+
+FILESYS_H =../filesys/directory.h \
+	../filesys/filehdr.h\
+	../filesys/filesys.h \
+	../filesys/openfile.h\
+	../filesys/synchdisk.h\
+	../machine/disk.h
+FILESYS_C =../filesys/directory.cc\
+	../filesys/filehdr.cc\
+	../filesys/filesys.cc\
+	../filesys/fstest.cc\
+	../filesys/openfile.cc\
 	../filesys/synchdisk.cc\
 	../machine/disk.cc
+FILESYS_O =directory.o filehdr.o filesys.o fstest.o openfile.o synchdisk.o\
+	disk.o
 
-USERPROG_O = addrspace.o exception.o synchconsole.o console.o machine.o \
-        mipssim.o translate.o userkernel.o synchdisk.o disk.o
-
-FILESYS_H = ../filesys/directory.h\
-        ../filesys/filehdr.h\
-        ../filesys/filesys.h\
-        ../filesys/openfile.h\
-        ../filesys/pbitmap.h
-
-FILESYS_C = ../filesys/directory.cc\
-        ../filesys/filesys.cc\
-        ../filesys/openfile.cc\
-        ../filesys/filehdr.cc\
-        ../filesys/fstest.cc\
-        ../filesys/pbitmap.cc
-
-FILESYS_O = directory.o filesys.o openfile.o filehdr.o fstest.o\
-        pbitmap.o
-
-NETWORK_H = ../network/netkernel.h ../network/post.h ../machine/network.h
-
-NETWORK_C = ../network/netkernel.cc ../network/post.cc ../machine/network.cc
-
-NETWORK_O = netkernel.o post.o network.o
+NETWORK_H = ../network/post.h ../machine/network.h
+NETWORK_C = ../network/nettest.cc ../network/post.cc ../machine/network.cc
+NETWORK_O = nettest.o post.o network.o
 
 S_OFILES = switch.o
 
@@ -145,17 +127,20 @@ $(C_OFILES): %.o:
 	$(CC) $(CFLAGS) -c $<
 
 switch.o: ../threads/switch.s
-	$(CPP) $(CPP_AS_FLAGS) -P $(INCPATH) $(HOST) ../threads/switch.s > swtch.s
+	$(CPP) -P $(INCPATH) $(HOST) ../threads/switch.s > swtch.s
 	$(AS) -o switch.o swtch.s
+	rm -f swtch.s
 
 depend: $(CFILES) $(HFILES)
-	$(CC) $(INCPATH) $(DEFINES) $(HOST) -M $(CFILES) > makedep
+	$(CC) $(INCPATH) $(DEFINES) $(HOST) -DCHANGED -M $(CFILES) > makedep
 	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
-	echo 'q' >>eddep
 	ed - Makefile < eddep
 	rm eddep makedep 
 	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
 	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
 	echo '# see make depend above' >> Makefile
+
+clean:
+	rm -f *.o nachos

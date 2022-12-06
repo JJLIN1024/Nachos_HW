@@ -50,8 +50,6 @@
 #include "directory.h"
 #include "filehdr.h"
 #include "filesys.h"
-#include "debug.h"
-#include "pbitmap.h"
 
 // Sectors containing the file headers for the bitmap of free sectors,
 // and the directory of files.  These file headers are placed in well-known 
@@ -81,14 +79,14 @@
 
 FileSystem::FileSystem(bool format)
 { 
-    DEBUG(dbgFile, "Initializing the file system.");
+    DEBUG('f', "Initializing the file system.\n");
     if (format) {
-        PersistBitMap *freeMap = new PersistBitMap(NumSectors);
+        BitMap *freeMap = new BitMap(NumSectors);
         Directory *directory = new Directory(NumDirEntries);
 	FileHeader *mapHdr = new FileHeader;
 	FileHeader *dirHdr = new FileHeader;
 
-        DEBUG(dbgFile, "Formatting the file system.");
+        DEBUG('f', "Formatting the file system.\n");
 
     // First, allocate space for FileHeaders for the directory and bitmap
     // (make sure no one else grabs these!)
@@ -106,7 +104,7 @@ FileSystem::FileSystem(bool format)
     // reads the file header off of disk (and currently the disk has garbage
     // on it!).
 
-        DEBUG(dbgFile, "Writing headers back to disk.");
+        DEBUG('f', "Writing headers back to disk.\n");
 	mapHdr->WriteBack(FreeMapSector);    
 	dirHdr->WriteBack(DirectorySector);
 
@@ -123,18 +121,19 @@ FileSystem::FileSystem(bool format)
     // sectors on the disk have been allocated for the file headers and
     // to hold the file data for the directory and bitmap.
 
-        DEBUG(dbgFile, "Writing bitmap and directory back to disk.");
+        DEBUG('f', "Writing bitmap and directory back to disk.\n");
 	freeMap->WriteBack(freeMapFile);	 // flush changes to disk
 	directory->WriteBack(directoryFile);
 
-	if (debug->IsEnabled('f')) {
+	if (DebugIsEnabled('f')) {
 	    freeMap->Print();
 	    directory->Print();
-        }
+
         delete freeMap; 
 	delete directory; 
 	delete mapHdr; 
 	delete dirHdr;
+	}
     } else {
     // if we are not formatting the disk, just open the files representing
     // the bitmap and directory; these are left open while Nachos is running
@@ -176,12 +175,12 @@ bool
 FileSystem::Create(char *name, int initialSize)
 {
     Directory *directory;
-    PersistBitMap *freeMap;
+    BitMap *freeMap;
     FileHeader *hdr;
     int sector;
     bool success;
 
-    DEBUG(dbgFile, "Creating file " << name << " size " << initialSize);
+    DEBUG('f', "Creating file %s, size %d\n", name, initialSize);
 
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
@@ -189,9 +188,9 @@ FileSystem::Create(char *name, int initialSize)
     if (directory->Find(name) != -1)
       success = FALSE;			// file is already in directory
     else {	
-        freeMap = new PersistBitMap(NumSectors);
+        freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
-        sector = freeMap->FindAndSet();	// find a sector to hold the file header
+        sector = freeMap->Find();	// find a sector to hold the file header
     	if (sector == -1) 		
             success = FALSE;		// no free block for file header 
         else if (!directory->Add(name, sector))
@@ -232,7 +231,7 @@ FileSystem::Open(char *name)
     OpenFile *openFile = NULL;
     int sector;
 
-    DEBUG(dbgFile, "Opening file" << name);
+    DEBUG('f', "Opening file %s\n", name);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name); 
     if (sector >= 0) 		
@@ -259,7 +258,7 @@ bool
 FileSystem::Remove(char *name)
 { 
     Directory *directory;
-    PersistBitMap *freeMap;
+    BitMap *freeMap;
     FileHeader *fileHdr;
     int sector;
     
@@ -273,7 +272,7 @@ FileSystem::Remove(char *name)
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
 
-    freeMap = new PersistBitMap(NumSectors);
+    freeMap = new BitMap(NumSectors);
     freeMap->FetchFrom(freeMapFile);
 
     fileHdr->Deallocate(freeMap);  		// remove data blocks
@@ -318,7 +317,7 @@ FileSystem::Print()
 {
     FileHeader *bitHdr = new FileHeader;
     FileHeader *dirHdr = new FileHeader;
-    PersistBitMap *freeMap = new PersistBitMap(NumSectors);
+    BitMap *freeMap = new BitMap(NumSectors);
     Directory *directory = new Directory(NumDirEntries);
 
     printf("Bit map file header:\n");
@@ -339,4 +338,4 @@ FileSystem::Print()
     delete dirHdr;
     delete freeMap;
     delete directory;
-}
+} 
