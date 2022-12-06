@@ -13,7 +13,7 @@
 //
 //  DO NOT CHANGE -- part of the machine emulation
 //
-// Copyright (c) 1992-1993 The Regents of the University of California.
+// Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
@@ -22,28 +22,32 @@
 
 #include "copyright.h"
 #include "utility.h"
+#include "callback.h"
 
 // The following class defines a hardware timer. 
-class Timer {
+class Timer : public CallBackObj {
   public:
-    Timer(VoidFunctionPtr timerHandler, int callArg, bool doRandom);
-				// Initialize the timer, to call the interrupt
-				// handler "timerHandler" every time slice.
-    ~Timer() {}
-
-// Internal routines to the timer emulation -- DO NOT call these
-
-    void TimerExpired();	// called internally when the hardware
-				// timer generates an interrupt
-
-    int TimeOfNextInterrupt();  // figure out when the timer will generate
-				// its next interrupt 
+    Timer(bool doRandom, CallBackObj *toCall);
+				// Initialize the timer, and callback to "toCall"
+				// every time slice.
+    virtual ~Timer() {}
+    
+    void Disable() { disable = TRUE; }
+    				// Turn timer device off, so it doesn't
+				// generate any more interrupts.
 
   private:
     bool randomize;		// set if we need to use a random timeout delay
-    VoidFunctionPtr handler;	// timer interrupt handler 
-    int arg;			// argument to pass to interrupt handler
+    CallBackObj *callPeriodically; // call this every TimerTicks time units 
+    bool disable;		// turn off the timer device after next
+    				// interrupt.
+    
+    void CallBack();		// called internally when the hardware
+				// timer generates an interrupt
 
+    void SetInterrupt();  	// cause an interrupt to occur in the
+    				// the future after a fixed or random
+				// delay
 };
 
 #endif // TIMER_H

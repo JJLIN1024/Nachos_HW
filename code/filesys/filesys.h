@@ -43,9 +43,9 @@
 				// implementation is available
 class FileSystem {
   public:
-    FileSystem(bool format) {}
+    FileSystem(bool format=true) {}
 
-    bool Create(char *name, int initialSize) { 
+    bool Create(char *name) { 
 	int fileDescriptor = OpenForWrite(name);
 
 	if (fileDescriptor == -1) return FALSE;
@@ -67,7 +67,7 @@ class FileSystem {
 #else // FILESYS
 class FileSystem {
   public:
-    FileSystem(bool format);		// Initialize the file system.
+    FileSystem(bool format=true);		// Initialize the file system.
 					// Must be called *after* "synchDisk" 
 					// has been initialized.
     					// If "format", there is nothing on

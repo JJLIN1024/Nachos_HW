@@ -27,35 +27,10 @@
 #define SC_Read		6
 #define SC_Write	7
 #define SC_Close	8
-#define SC_Fork		9
-#define SC_Yield	10
-
-// New syscalls defined by Mainak
-
+#define SC_ThreadFork	9
+#define SC_ThreadYield	10
 #define SC_PrintInt	11
-#define SC_PrintChar	12
-#define SC_PrintString	13
-
-#define SC_GetReg	14
-#define SC_GetPA	15
-#define SC_GetPID	16
-#define SC_GetPPID	17
-
-#define SC_Sleep	18
-
-#define SC_Time		19
-
-#define SC_PrintIntHex	20
-
-#define SC_SemGet	21
-#define SC_SemOp	22
-#define SC_SemCtl	23
-
-#define SC_CondGet	24
-#define SC_CondOp	25
-#define SC_CondRemove	26
-
-#define SC_ShmAllocate	27
+#define SC_Sleep 12
 
 #ifndef IN_ASM
 
@@ -79,12 +54,12 @@ void Halt();
 void Exit(int status);	
 
 /* A unique identifier for an executing user program (address space) */
-/* This is same as PID. */
 typedef int SpaceId;	
  
-/* Run the executable, stored in the Nachos file "name". Doesn't return.
+/* Run the executable, stored in the Nachos file "name", and return the 
+ * address space identifier
  */
-void Exec(char *name);
+SpaceId Exec(char *name);
  
 /* Only return once the the user program "id" has finished.  
  * Return the exit status.
@@ -139,52 +114,23 @@ void Close(OpenFileId id);
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program. 
+ *
+ * Could define other operations, such as LockAcquire, LockRelease, etc.
  */
 
-/* Fork a thread. Returns child pid to parent and zero to child.
+/* Fork a thread to run a procedure ("func") in the *same* address space 
+ * as the current thread.
  */
-int Fork();
+void ThreadFork(void (*func)());
 
 /* Yield the CPU to another runnable thread, whether in this address space 
  * or not. 
  */
-void Yield();		
+void ThreadYield();		
 
-// New definitions
+void PrintInt(int number);	//my System Call
 
-void PrintInt (int x);
-
-void PrintIntHex (int x);
-
-void PrintChar (char x);
-
-void PrintString (char *x);
-
-int GetReg (int regno);
-
-int GetPA (unsigned vaddr);
-
-int GetPID (void);
-
-int GetPPID (void);
-
-void Sleep (unsigned);
-
-int GetTime (void);
-
-int SemGet (int key);
-
-void SemOp (int semid, int adjust);
-
-int SemCtl (int semid, unsigned command, int *val);
-
-int CondGet (int key);
-
-void CondOp (int condid, unsigned op, int semid);
-
-int CondRemove (int condid);
-
-unsigned ShmAllocate (unsigned size);
+void Sleep(int number); 
 #endif /* IN_ASM */
 
 #endif /* SYSCALL_H */

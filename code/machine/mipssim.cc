@@ -6,17 +6,38 @@
 //
 //   DO NOT CHANGE -- part of the machine emulation
 //
-// Copyright (c) 1992-1993 The Regents of the University of California.
+// Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
 
+#include "debug.h"
 #include "machine.h"
 #include "mipssim.h"
-#include "system.h"
+#include "main.h"
 
 static void Mult(int a, int b, bool signedArith, int* hiPtr, int* loPtr);
+
+// The following class defines an instruction, represented in both
+// 	undecoded binary form
+//      decoded to identify
+//	    operation to do
+//	    registers to act on
+//	    any immediate operand value
+
+class Instruction {
+  public:
+    void Decode();	// decode the binary representation of the instruction
+
+    unsigned int value; // binary representation of the instruction
+
+    char opCode;     // Type of instruction.  This is NOT the same as the
+    		     // opcode field from the instruction: see defs in mips.h
+    char rs, rt, rd; // Three registers from instruction.
+    int extra;       // Immediate or target or shamt field or offset.
+                     // Immediates are sign-extended.
+};
 
 //----------------------------------------------------------------------
 // Machine::Run
@@ -32,14 +53,15 @@ Machine::Run()
 {
     Instruction *instr = new Instruction;  // storage for decoded instruction
 
-    if(DebugIsEnabled('m'))
-        printf("Starting thread \"%s\" at time %d\n",
-	       currentThread->getName(), stats->totalTicks);
-    interrupt->setStatus(UserMode);
+    if (debug->IsEnabled('m')) {
+        cout << "Starting program in thread: " << kernel->currentThread->getName();
+	cout << ", at time: " << kernel->stats->totalTicks << "\n";
+    }
+    kernel->interrupt->setStatus(UserMode);
     for (;;) {
         OneInstruction(instr);
-	interrupt->OneTick();
-	if (singleStep && (runUntilTime <= stats->totalTicks))
+	kernel->interrupt->OneTick();
+	if (singleStep && (runUntilTime <= kernel->stats->totalTicks))
 	  Debugger();
     }
 }
@@ -99,20 +121,21 @@ Machine::OneInstruction(Instruction *instr)
 				// in the future
 
     // Fetch instruction 
-    if (!machine->ReadMem(registers[PCReg], 4, &raw))
+    if (!ReadMem(registers[PCReg], 4, &raw))
 	return;			// exception occurred
     instr->value = raw;
     instr->Decode();
 
-    if (DebugIsEnabled('m')) {
-       struct OpString *str = &opStrings[instr->opCode];
+    if (debug->IsEnabled('m')) {
+        struct OpString *str = &opStrings[instr->opCode];
+	char buf[80];
 
-       ASSERT(instr->opCode <= MaxOpcode);
-       printf("At PC = 0x%x: ", registers[PCReg]);
-       printf(str->string, TypeToReg(str->args[0], instr), 
-		TypeToReg(str->args[1], instr), TypeToReg(str->args[2], instr));
-       printf("\n");
-       }
+        ASSERT(instr->opCode <= MaxOpcode);
+        cout << "At PC = " << registers[PCReg];
+	sprintf(buf, str->format, TypeToReg(str->args[0], instr),
+	     TypeToReg(str->args[1], instr), TypeToReg(str->args[2], instr));
+        cout << "\t" << buf << "\n";
+    }
     
     // Compute next pc, but don't install in case there's an error or branch.
     int pcAfter = registers[NextPCReg] + 4;
@@ -231,7 +254,7 @@ Machine::OneInstruction(Instruction *instr)
       case OP_LB:
       case OP_LBU:
 	tmp = registers[instr->rs] + instr->extra;
-	if (!machine->ReadMem(tmp, 1, &value))
+	if (!ReadMem(tmp, 1, &value))
 	    return;
 
 	if ((value & 0x80) && (instr->opCode == OP_LB))
@@ -249,7 +272,7 @@ Machine::OneInstruction(Instruction *instr)
 	    RaiseException(AddressErrorException, tmp);
 	    return;
 	}
-	if (!machine->ReadMem(tmp, 2, &value))
+	if (!ReadMem(tmp, 2, &value))
 	    return;
 
 	if ((value & 0x8000) && (instr->opCode == OP_LH))
@@ -261,7 +284,7 @@ Machine::OneInstruction(Instruction *instr)
 	break;
       	
       case OP_LUI:
-	DEBUG('m', "Executing: LUI r%d,%d\n", instr->rt, instr->extra);
+	DEBUG(dbgMach, "Executing: LUI r" << instr->rt << ", " << instr->extra);
 	registers[instr->rt] = instr->extra << 16;
 	break;
 	
@@ -271,7 +294,7 @@ Machine::OneInstruction(Instruction *instr)
 	    RaiseException(AddressErrorException, tmp);
 	    return;
 	}
-	if (!machine->ReadMem(tmp, 4, &value))
+	if (!ReadMem(tmp, 4, &value))
 	    return;
 	nextLoadReg = instr->rt;
 	nextLoadValue = value;
@@ -285,7 +308,7 @@ Machine::OneInstruction(Instruction *instr)
         // fail (I think) if the other cases are ever exercised.
 	ASSERT((tmp & 0x3) == 0);  
 
-	if (!machine->ReadMem(tmp, 4, &value))
+	if (!ReadMem(tmp, 4, &value))
 	    return;
 	if (registers[LoadReg] == instr->rt)
 	    nextLoadValue = registers[LoadValueReg];
@@ -316,7 +339,7 @@ Machine::OneInstruction(Instruction *instr)
         // fail (I think) if the other cases are ever exercised.
 	ASSERT((tmp & 0x3) == 0);  
 
-	if (!machine->ReadMem(tmp, 4, &value))
+	if (!ReadMem(tmp, 4, &value))
 	    return;
 	if (registers[LoadReg] == instr->rt)
 	    nextLoadValue = registers[LoadValueReg];
@@ -381,13 +404,13 @@ Machine::OneInstruction(Instruction *instr)
 	break;
 	
       case OP_SB:
-	if (!machine->WriteMem((unsigned) 
+	if (!WriteMem((unsigned) 
 		(registers[instr->rs] + instr->extra), 1, registers[instr->rt]))
 	    return;
 	break;
 	
       case OP_SH:
-	if (!machine->WriteMem((unsigned) 
+	if (!WriteMem((unsigned) 
 		(registers[instr->rs] + instr->extra), 2, registers[instr->rt]))
 	    return;
 	break;
@@ -469,7 +492,7 @@ Machine::OneInstruction(Instruction *instr)
 	break;
 	
       case OP_SW:
-	if (!machine->WriteMem((unsigned) 
+	if (!WriteMem((unsigned) 
 		(registers[instr->rs] + instr->extra), 4, registers[instr->rt]))
 	    return;
 	break;
@@ -481,7 +504,7 @@ Machine::OneInstruction(Instruction *instr)
         // fail (I think) if the other cases are ever exercised.
 	ASSERT((tmp & 0x3) == 0);  
 
-	if (!machine->ReadMem((tmp & ~0x3), 4, &value))
+	if (!ReadMem((tmp & ~0x3), 4, &value))
 	    return;
 	switch (tmp & 0x3) {
 	  case 0:
@@ -500,7 +523,7 @@ Machine::OneInstruction(Instruction *instr)
 					    0xff);
 	    break;
 	}
-	if (!machine->WriteMem((tmp & ~0x3), 4, value))
+	if (!WriteMem((tmp & ~0x3), 4, value))
 	    return;
 	break;
     	
@@ -511,7 +534,7 @@ Machine::OneInstruction(Instruction *instr)
         // fail (I think) if the other cases are ever exercised.
 	ASSERT((tmp & 0x3) == 0);  
 
-	if (!machine->ReadMem((tmp & ~0x3), 4, &value))
+	if (!ReadMem((tmp & ~0x3), 4, &value))
 	    return;
 	switch (tmp & 0x3) {
 	  case 0:
@@ -527,13 +550,14 @@ Machine::OneInstruction(Instruction *instr)
 	    value = registers[instr->rt];
 	    break;
 	}
-	if (!machine->WriteMem((tmp & ~0x3), 4, value))
+	if (!WriteMem((tmp & ~0x3), 4, value))
 	    return;
 	break;
     	
       case OP_SYSCALL:
 	RaiseException(SyscallException, 0);
-	return; 
+//	return; 
+	break;
 	
       case OP_XOR:
 	registers[instr->rd] = registers[instr->rs] ^ registers[instr->rt];

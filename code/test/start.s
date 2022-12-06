@@ -114,157 +114,38 @@ Close:
 	j	$31
 	.end Close
 
-	.globl Fork
-	.ent	Fork
-Fork:
-	addiu $2,$0,SC_Fork
-	syscall
-	j	$31
-	.end Fork
+        .globl ThreadFork
+        .ent    ThreadFork
+ThreadFork:
+        addiu $2,$0,SC_ThreadFork
+        syscall
+        j       $31
+        .end ThreadFork
 
-	.globl Yield
-	.ent	Yield
-Yield:
-	addiu $2,$0,SC_Yield
-	syscall
-	j	$31
-	.end Yield
+        .globl ThreadYield
+        .ent    ThreadYield
+ThreadYield:
+        addiu $2,$0,SC_ThreadYield
+        syscall
+        j       $31
+        .end ThreadYield
 
-	.globl PrintInt
+	.globl  PrintInt
 	.ent    PrintInt
 PrintInt:
-        addiu $2,$0,SC_PrintInt
-        syscall
-        j       $31
-	.end PrintInt
-
-	.globl PrintIntHex
-	.ent    PrintIntHex
-PrintIntHex:
-	addiu $2,$0,SC_PrintIntHex
+	addiu   $2,$0,SC_PrintInt
 	syscall
 	j       $31
-	.end PrintInt
+	.end    PrintInt
 
-	.globl PrintChar
-	.ent    PrintChar
-PrintChar:
-        addiu $2,$0,SC_PrintChar
-        syscall
-        j       $31
-	.end PrintChar
-
-	.globl PrintString
-	.ent    PrintString
-PrintString:
-        addiu $2,$0,SC_PrintString
-        syscall
-        j       $31
-	.end PrintString
-
-	.globl GetReg
-	.ent    GetReg
-GetReg:
-	addiu $2,$0,SC_GetReg
-	syscall
-	j       $31
-	.end GetReg
-
-	.globl GetPA
-	.ent    GetPA
-GetPA:
-	addiu $2,$0,SC_GetPA
-	syscall
-	j       $31
-	.end GetPA
-
-	.globl GetPID
-	.ent    GetPID
-GetPID:
-	addiu $2,$0,SC_GetPID
-	syscall
-	j       $31
-	.end GetPID
-
-	.globl GetPPID
-	.ent    GetPPID
-GetPPID:
-	addiu $2,$0,SC_GetPPID
-	syscall
-	j       $31
-	.end GetPPID
-
-	.globl Sleep
-	.ent    Sleep
+    .globl  Sleep
+    .ent    Sleep
 Sleep:
-	addiu $2,$0,SC_Sleep
-	syscall
-	j       $31
-	.end Sleep
+    addiu   $2,$0,SC_Sleep
+    syscall
+    j       $31
+    .end    Sleep
 
-	.globl GetTime
-	.ent    GetTime
-GetTime:
-	addiu $2,$0,SC_Time
-	syscall
-	j       $31
-	.end GetTime
-
-	.globl SemGet
-	.ent    SemGet
-SemGet:
-	addiu $2,$0,SC_SemGet
-	syscall
-	j       $31
-	.end SemGet
-
-	.globl SemOp
-	.ent    SemOp
-SemOp:
-	addiu $2,$0,SC_SemOp
-	syscall
-	j       $31
-	.end SemOp
-
-	.globl SemCtl
-	.ent    SemCtl
-SemCtl:
-	addiu $2,$0,SC_SemCtl
-	syscall
-	j       $31
-	.end SemCtl
-
-	.globl CondGet
-	.ent    CondGet
-CondGet:
-	addiu $2,$0,SC_CondGet
-	syscall
-	j       $31
-	.end CondGet
-
-	.globl CondOp
-	.ent    CondOp
-CondOp:
-	addiu $2,$0,SC_CondOp
-	syscall
-	j       $31
-	.end CondOp
-
-	.globl CondRemove
-	.ent    CondRemove
-CondRemove:
-	addiu $2,$0,SC_CondRemove
-	syscall
-	j       $31
-	.end CondRemove
-
-	.globl ShmAllocate
-	.ent    ShmAllocate
-ShmAllocate:
-	addiu $2,$0,SC_ShmAllocate
-	syscall
-	j       $31
-	.end ShmAllocate
 
 /* dummy function to keep gcc happy */
         .globl  __main

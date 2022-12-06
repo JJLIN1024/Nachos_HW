@@ -19,17 +19,19 @@
 //	to which you can send an acknowledgement, if your protocol requires 
 //	this.
 //
-// Copyright (c) 1992-1993 The Regents of the University of California.
+// Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
-
-#include "copyright.h"
 
 #ifndef POST_H
 #define POST_H
 
+#include "copyright.h"
+#include "utility.h"
+#include "callback.h"
 #include "network.h"
 #include "synchlist.h"
+#include "synch.h"
 
 // Mailbox address -- uniquely identifies a mailbox on a given machine.
 // A mailbox is just a place for temporary storage for messages.
@@ -87,55 +89,63 @@ class MailBox {
 				// mailbox (and wait if there is no message 
 				// to get!)
   private:
-    SynchList *messages;	// A mailbox is just a list of arrived messages
+    SynchList<Mail *> *messages; // A mailbox is just a list of arrived messages
 };
 
-// The following class defines a "Post Office", or a collection of 
-// mailboxes.  The Post Office is a synchronization object that provides
-// two main operations: Send -- send a message to a mailbox on a remote 
-// machine, and Receive -- wait until a message is in the mailbox, 
-// then remove and return it.
+// The following two classes defines a "Post Office", or a collection of 
+// mailboxes.  The Post Office provides two main operations: 
+//	Send -- send a message to a mailbox on a remote machine 
+//	Receive -- wait until a message is in the mailbox, then remove and 
+//		return it.
 //
 // Incoming messages are put by the PostOffice into the 
 // appropriate mailbox, waking up any threads waiting on Receive.
 
-class PostOffice {
+class PostOfficeInput : public CallBackObj {
   public:
-    PostOffice(NetworkAddress addr, double reliability, int nBoxes);
-				// Allocate and initialize Post Office
-				//   "reliability" is how many packets
-				//   get dropped by the underlying network
-    ~PostOffice();		// De-allocate Post Office data
-    
-    void Send(PacketHeader pktHdr, MailHeader mailHdr, char *data);
-    				// Send a message to a mailbox on a remote 
-				// machine.  The fromBox in the MailHeader is 
-				// the return box for ack's.
+    PostOfficeInput(int nBoxes); // Allocate and initialize Post Office
+    ~PostOfficeInput();		// De-allocate Post Office data
     
     void Receive(int box, PacketHeader *pktHdr, 
 		MailHeader *mailHdr, char *data);
     				// Retrieve a message from "box".  Wait if
 				// there is no message in the box.
-
+    static void PostalDelivery_st( PostOfficeInput *);
     void PostalDelivery();	// Wait for incoming messages, 
 				// and then put them in the correct mailbox
 
-    void PacketSent();		// Interrupt handler, called when outgoing 
-				// packet has been put on network; next 
-				// packet can now be sent
-    void IncomingPacket();	// Interrupt handler, called when incoming
-   				// packet has arrived and can be pulled
-				// off of network (i.e., time to call 
-				// PostalDelivery)
+    void CallBack();		// Called when incoming packet has arrived 
+				// and can be pulled off of network 
+				// (i.e., time to call PostalDelivery)
 
   private:
-    Network *network;		// Physical network connection
-    NetworkAddress netAddr;	// Network address of this machine
+    NetworkInput *network;	// Physical network connection
     MailBox *boxes;		// Table of mail boxes to hold incoming mail
     int numBoxes;		// Number of mail boxes
     Semaphore *messageAvailable;// V'ed when message has arrived from network
-    Semaphore *messageSent;	// V'ed when next message can be sent to network
-    Lock *sendLock;		// Only one outgoing message at a time
 };
 
+class PostOfficeOutput : public CallBackObj {
+  public:
+    PostOfficeOutput(double reliability, int nBoxes);
+				// Allocate and initialize output
+				//   "reliability" is how many packets
+				//   get dropped by the underlying network
+				//   "nBoxes" is # of mailboxes on remote side
+    ~PostOfficeOutput();	// De-allocate Post Office data
+
+    void Send(PacketHeader pktHdr, MailHeader mailHdr, char *data);
+    				// Send a message to a mailbox on a remote 
+				// machine.  The fromBox in the MailHeader is 
+				// the return box for ack's.
+
+    void CallBack();		// Called when outgoing packet has been 
+				// put on network; next packet can now be sent
+    
+  private:
+    NetworkOutput *network;	// Physical network connection
+    Semaphore *messageSent;	// V'ed when next message can be sent to network
+    Lock *sendLock;		// Only one outgoing message at a time
+    int numBoxes;		// Number of mail boxes on *remote* side
+};
 #endif

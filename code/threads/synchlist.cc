@@ -1,9 +1,6 @@
 // synchlist.cc
 //	Routines for synchronized access to a list.
 //
-//	Implemented by surrounding the List abstraction
-//	with synchronization routines.
-//
 // 	Implemented in "monitor"-style -- surround each procedure with a
 // 	lock acquire and release pair, using condition signal and wait for
 // 	synchronization.
@@ -16,42 +13,44 @@
 #include "synchlist.h"
 
 //----------------------------------------------------------------------
-// SynchList::SynchList
+// SynchList<T>::SynchList
 //	Allocate and initialize the data structures needed for a 
 //	synchronized list, empty to start with.
 //	Elements can now be added to the list.
 //----------------------------------------------------------------------
 
-SynchList::SynchList()
+template <class T>
+SynchList<T>::SynchList()
 {
-    list = new List();
+    list = new List<T>;
     lock = new Lock("list lock"); 
     listEmpty = new Condition("list empty cond");
 }
 
 //----------------------------------------------------------------------
-// SynchList::~SynchList
+// SynchList<T>::~SynchList
 //	De-allocate the data structures created for synchronizing a list. 
 //----------------------------------------------------------------------
 
-SynchList::~SynchList()
+template <class T>
+SynchList<T>::~SynchList()
 { 
-    delete list; 
-    delete lock;
     delete listEmpty;
+    delete lock;
+    delete list;
 }
 
 //----------------------------------------------------------------------
-// SynchList::Append
+// SynchList<T>::Append
 //      Append an "item" to the end of the list.  Wake up anyone
 //	waiting for an element to be appended.
 //
-//	"item" is the thing to put on the list, it can be a pointer to 
-//		anything.
+//	"item" is the thing to put on the list. 
 //----------------------------------------------------------------------
 
+template <class T>
 void
-SynchList::Append(void *item)
+SynchList<T>::Append(T item)
 {
     lock->Acquire();		// enforce mutual exclusive access to the list 
     list->Append(item);
@@ -60,39 +59,79 @@ SynchList::Append(void *item)
 }
 
 //----------------------------------------------------------------------
-// SynchList::Remove
+// SynchList<T>::RemoveFront
 //      Remove an "item" from the beginning of the list.  Wait if
 //	the list is empty.
 // Returns:
 //	The removed item. 
 //----------------------------------------------------------------------
 
-void *
-SynchList::Remove()
+template <class T>
+T
+SynchList<T>::RemoveFront()
 {
-    void *item;
+    T item;
 
     lock->Acquire();			// enforce mutual exclusion
     while (list->IsEmpty())
 	listEmpty->Wait(lock);		// wait until list isn't empty
-    item = list->Remove();
-    ASSERT(item != NULL);
+    item = list->RemoveFront();
     lock->Release();
     return item;
 }
 
 //----------------------------------------------------------------------
-// SynchList::Mapcar
-//      Apply function to every item on the list.  Obey mutual exclusion
-//	constraints.
+// SynchList<T>::Apply
+//      Apply function to every item on a list.
 //
-//	"func" is the procedure to be applied.
+//      "func" -- the function to apply
 //----------------------------------------------------------------------
 
+template <class T>
 void
-SynchList::Mapcar(VoidFunctionPtr func)
-{ 
-    lock->Acquire(); 
-    list->Mapcar(func);
-    lock->Release(); 
+SynchList<T>::Apply(void (*func)(T))
+{
+    lock->Acquire();			// enforce mutual exclusion
+    list->Apply(func);
+    lock->Release();
+}
+
+//----------------------------------------------------------------------
+// SynchList<T>::SelfTest, SelfTestHelper
+//	Test whether the SynchList implementation is working,
+//	by having two threads ping-pong a value between them
+//	using two synchronized lists.
+//----------------------------------------------------------------------
+
+template <class T>
+void
+SynchList<T>::SelfTestHelper() 
+{
+    for (int i = 0; i < 10; i++) {
+        this->Append(selfTestPing->RemoveFront());
+    }
+}
+
+
+template <class T>
+void
+SynchList<T>::SelfTestHelper_st(SynchList<T> *slist)
+{
+    slist->SelfTestHelper();
+}	
+
+template <class T>
+void
+SynchList<T>::SelfTest(T val)
+{
+    Thread *helper = new Thread("ping");
+    
+    ASSERT(list->IsEmpty());
+    selfTestPing = new SynchList<T>;
+    helper->Fork((VoidFunctionPtr) &SynchList<T>::SelfTestHelper_st, this);
+    for (int i = 0; i < 10; i++) {
+        selfTestPing->Append(val);
+	ASSERT(val == this->RemoveFront());
+    }
+    delete selfTestPing;
 }

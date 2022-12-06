@@ -28,21 +28,6 @@ class Statistics {
 				// (this is also equal to # of
 				// user instructions executed)
 
-    int start_time;		// Start tick of the first CPU burst
-    int total_wait_time;	// Total wait time in ready queue
-    int cpu_time;		// Total CPU busy time
-    int max_cpu_burst;		// Maximum CPU burst length
-    int min_cpu_burst;		// Minimum CPU burst length
-    int cpu_burst_count;	// Number of CPU bursts
-    int empty_ready_queue_time;	// Time for which the ready queue is empty
-
-    int preemptive_switch;	// Preemptive context switch count
-    int nonpreemptive_switch;	// Non-preemptive context switch count
-
-    int numTotalThreads;	// Total number of created threads
-
-    int burstEstimateError;	// Keeps track of the squared error in burst estimates
-
     int numDiskReads;		// number of disk read requests
     int numDiskWrites;		// number of disk write requests
     int numConsoleCharsRead;	// number of characters read from the keyboard
@@ -64,12 +49,12 @@ class Statistics {
 // in the kernel measured by the number of calls to enable interrupts,
 // these time constants are none too exact.
 
-#define UserTick 	1	// advance for each user-level instruction 
-#define SystemTick 	10 	// advance each time interrupts are enabled
-#define RotationTime 	500 	// time disk takes to rotate one sector
-#define SeekTime 	500    	// time disk takes to seek past one track
-#define ConsoleTime 	100	// time to read or write one character
-#define NetworkTime 	100   	// time to send or receive one packet
-#define TimerTicks 	100   	// (average) time between timer interrupts
+const int UserTick = 	   1;	// advance for each user-level instruction 
+const int SystemTick =	  10; 	// advance each time interrupts are enabled
+const int RotationTime = 500; 	// time disk takes to rotate one sector
+const int SeekTime =	 500;  	// time disk takes to seek past one track
+const int ConsoleTime =	 100;	// time to read or write one character
+const int NetworkTime =	 100;  	// time to send or receive one packet
+const int TimerTicks = 	 100;  	// (average) time between timer interrupts
 
 #endif // STATS_H

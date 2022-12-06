@@ -11,10 +11,13 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
+#ifdef FILESYS
+
 #include "copyright.h"
 #include "filehdr.h"
 #include "openfile.h"
-#include "system.h"
+#include "debug.h"
+#include "main.h"
 
 //----------------------------------------------------------------------
 // OpenFile::OpenFile
@@ -121,8 +124,7 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
     	return 0; 				// check request
     if ((position + numBytes) > fileLength)		
 	numBytes = fileLength - position;
-    DEBUG('f', "Reading %d bytes at %d, from file of length %d.\n", 	
-			numBytes, position, fileLength);
+    DEBUG(dbgFile, "Reading " << numBytes << " bytes at " << position << " from file of length " << fileLength);
 
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);
@@ -131,7 +133,7 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
     // read in all the full and partial sectors that we need
     buf = new char[numSectors * SectorSize];
     for (i = firstSector; i <= lastSector; i++)	
-        synchDisk->ReadSector(hdr->ByteToSector(i * SectorSize), 
+        kernel->synchDisk->ReadSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);
 
     // copy the part we want
@@ -152,8 +154,7 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
 	return 0;				// check request
     if ((position + numBytes) > fileLength)
 	numBytes = fileLength - position;
-    DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
-			numBytes, position, fileLength);
+    DEBUG(dbgFile, "Writing " << numBytes << " bytes at " << position << " from file of length " << fileLength);
 
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);
@@ -176,7 +177,7 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
 
 // write modified sectors back
     for (i = firstSector; i <= lastSector; i++)	
-        synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
+        kernel->synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);
     delete [] buf;
     return numBytes;
@@ -192,3 +193,4 @@ OpenFile::Length()
 { 
     return hdr->FileLength(); 
 }
+#endif //FILESYS
