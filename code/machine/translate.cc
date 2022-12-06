@@ -184,7 +184,7 @@ Machine::WriteMem(int addr, int size, int value)
 ExceptionType
 Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 {
-    int i;
+    int i, j;
     unsigned int vpn, offset;
     TranslationEntry *entry;
     unsigned int pageFrame;
@@ -229,7 +229,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
                     
                 pageTable[vpn].LRU_times++; //for LRU
                      
-                kernel->Swap_Area->ReadSector(pageTable[vpn].virtualPage, buffer);      // read data from swap area
+                kernel->swapSpace->ReadSector(pageTable[vpn].virtualPage, buffer);      // read data from swap area
                 bcopy(buffer,&mainMemory[j*PageSize],PageSize);        // save data into physical memory
                     
             }
@@ -245,12 +245,11 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
                 //LRU
                      
                 int min = pageTable[0].LRU_times;
-                Swap_out_page=0;
+                int Swap_out_page=0;
                 for(int cc=0;cc<32;cc++){
                     if(min > pageTable[cc].LRU_times){
                         min = pageTable[cc].LRU_times;
-                        Swap_out_page = cc;
-                                    
+                        Swap_out_page = cc;            
                     }
                 } 
                 pageTable[Swap_out_page].LRU_times++;  
@@ -260,9 +259,9 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
                      
                 printf("Page%d swap out!\n",Swap_out_page);
                 bcopy(&mainMemory[Swap_out_page*PageSize],buffer1,PageSize);
-                kernel->Swap_Area->ReadSector(pageTable[vpn].virtualPage, buffer2);
+                kernel->swapSpace->ReadSector(pageTable[vpn].virtualPage, buffer2);
                 bcopy(buffer2,&mainMemory[Swap_out_page*PageSize],PageSize);
-                kernel->Swap_Area->WriteSector(pageTable[vpn].virtualPage,buffer1);
+                kernel->swapSpace->WriteSector(pageTable[vpn].virtualPage,buffer1);
                      
                 main_tab[Swap_out_page]->virtualPage=pageTable[vpn].virtualPage;
                 main_tab[Swap_out_page]->valid=FALSE;
