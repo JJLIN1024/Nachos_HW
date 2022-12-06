@@ -110,8 +110,7 @@ class Thread {
     int getBurstTime()		{return burstTime;}
     void setStartTime(int t)	{startTime = t;}
     int getStartTime()		{return startTime;}
-    void setPriority(int t)	{execPriority = t;}
-    int getPriority()		{return execPriority;}
+
     static void SchedulingTest();
 
 
@@ -132,7 +131,6 @@ class Thread {
 				// Used internally by Fork()
     int burstTime;	// predicted burst time
     int startTime;	// the start time of the thread
-    int execPriority;	// the execute priority of the thread
 
 
 #ifdef USER_PROGRAM

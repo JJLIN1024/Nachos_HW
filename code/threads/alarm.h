@@ -24,9 +24,12 @@
 #include <list>
 #include "thread.h"
 
+
+// Sleep system call
+// 
 class sleepList {
     public:
-        sleepList():_current_interrupt(0) {};
+        sleepList(): _current_interrupt(0) {};
         void GotoBed(Thread *t, int x);
     bool Wakeup();
     bool IsEmpty();
@@ -38,7 +41,6 @@ class sleepList {
                 Thread* sleeper;
                 int when;
         };
-
     int _current_interrupt;
     std::list<sleepThread> _threadlist;
 };

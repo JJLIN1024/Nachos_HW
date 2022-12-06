@@ -59,11 +59,14 @@ void Alarm::CallBack() {
         // cout << "=== interrupt->YieldOnReturn ===" << endl;
         interrupt->YieldOnReturn();
     }
-
 }
 
 void Alarm::WaitUntil(int x) {
     // turn off interrupt
+    // If we don't turn off interrupt, cpu
+    // will keep receiving interrupt, which
+    // will prevent us from correctly putting the current thread
+    // to sleep(sleep for correct amount of time)
     IntStatus oldLevel = kernel->interrupt->SetLevel(IntOff);
     Thread* t = kernel->currentThread;
 

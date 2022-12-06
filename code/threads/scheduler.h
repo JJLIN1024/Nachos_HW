@@ -17,21 +17,10 @@
 // the data structures and operations needed to keep track of which 
 // thread is running, and which threads are ready but not running.
 
-enum SchedulerType {
-		FCFS,
-        RR,     // Round Robin
-        SJF,
-        Priority
-};
-
 class Scheduler {
   public:
 	Scheduler();		// Initialize list of ready threads 
-	Scheduler(SchedulerType type); // cpu scheduling type
 	~Scheduler();				// De-allocate ready list
-
-	SchedulerType getSchedulerType() {return schedulerType;}
-    void setSchedulerType(SchedulerType t) {schedulerType = t;}
 	
 	void ReadyToRun(Thread* thread);	
     					// Thread can be dispatched.
@@ -46,7 +35,7 @@ class Scheduler {
     // SelfTest for scheduler is implemented in class Thread
     
   private:
-	SchedulerType schedulerType;
+
 	List<Thread *> *readyList;	// queue of threads that are ready to run,
 					// but not running
 	Thread *toBeDestroyed;		// finishing thread to be destroyed
