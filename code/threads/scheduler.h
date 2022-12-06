@@ -2,7 +2,7 @@
 //	Data structures for the thread dispatcher and scheduler.
 //	Primarily, the list of threads that are ready to run.
 //
-// Copyright (c) 1992-1996 The Regents of the University of California.
+// Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
@@ -19,27 +19,26 @@
 
 class Scheduler {
   public:
-	Scheduler();		// Initialize list of ready threads 
-	~Scheduler();				// De-allocate ready list
-	
-	void ReadyToRun(Thread* thread);	
-    					// Thread can be dispatched.
-	Thread* FindNextToRun();	// Dequeue first thread on the ready 
-					// list, if any, and return thread.
-	void Run(Thread* nextThread, bool finishing);
-	    				// Cause nextThread to start running
-	void CheckToBeDestroyed();	// Check if thread that had been
-    					// running needs to be deleted
-	void Print();			// Print contents of ready list
-    
-    // SelfTest for scheduler is implemented in class Thread
-    
-  private:
+    Scheduler();			// Initialize list of ready threads 
+    ~Scheduler();			// De-allocate ready list
 
-	List<Thread *> *readyList;	// queue of threads that are ready to run,
-					// but not running
-	Thread *toBeDestroyed;		// finishing thread to be destroyed
-    					// by the next thread that runs
+    void ReadyToRun(Thread* thread);	// Thread can be dispatched.
+    Thread* FindNextToRun();		// Dequeue first thread on the ready 
+					// list, if any, and return thread.
+    void Run(Thread* nextThread);	// Cause nextThread to start running
+    void Print();			// Print contents of ready list
+
+    void Tail();			// Used by fork()
+
+    void SetEmptyReadyQueueStartTime (int ticks);
+
+    void UpdateThreadPriority (void);	// Used by the UNIX scheduler
+   
+  private:
+    List *readyList;  		// queue of threads that are ready to run,
+				// but not running
+
+    int empty_ready_queue_start_time;
 };
 
 #endif // SCHEDULER_H

@@ -10,7 +10,7 @@
 //	Note that all the synchronization objects take a "name" as
 //	part of the initialization.  This is solely for debugging purposes.
 //
-// Copyright (c) 1992-1996 The Regents of the University of California.
+// Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // synch.h -- synchronization primitives.  
 
@@ -20,7 +20,7 @@
 #include "copyright.h"
 #include "thread.h"
 #include "list.h"
-#include "main.h"
+#include "synchop.h"
 
 // The following class defines a "semaphore" whose value is a non-negative
 // integer.  The semaphore has only two operations P() and V():
@@ -41,18 +41,19 @@ class Semaphore {
   public:
     Semaphore(char* debugName, int initialValue);	// set initial value
     ~Semaphore();   					// de-allocate semaphore
-    char* getName();			// debugging assist
+    char* getName() { return name;}			// debugging assist
     
-    void P();	 	// these are the only operations on a semaphore
-    void V();	 	// they are both *atomic*
-    void SelfTest();	// test routine for semaphore implementation
+    void P();	 // these are the only operations on a semaphore
+    void V();	 // they are both *atomic*
     
+    int getValue(); // Returns the semaphore value
+    void setValue(int val); // sets the semaphroe value
+    List *queue;       // threads waiting in P() for the value to be > 0
+    int value;         // semaphore value, always >= 0
+
   private:
     char* name;        // useful for debugging
-    int value;         // semaphore value, always >= 0
-    List<Thread *> *queue;     
-		  	// threads waiting in P() for the value to be > 0
-   };
+};
 
 // The following class defines a "lock".  A lock can be BUSY or FREE.
 // There are only two operations allowed on a lock: 
@@ -68,23 +69,21 @@ class Semaphore {
 
 class Lock {
   public:
-    Lock(char* debugName);  	// initialize lock to be FREE
-    ~Lock();			// deallocate lock
-    char* getName();	// debugging assist
+    Lock(char* debugName);  		// initialize lock to be FREE
+    ~Lock();				// deallocate lock
+    char* getName() { return name; }	// debugging assist
 
-    void Acquire(); 		// these are the only operations on a lock
-    void Release(); 		// they are both *atomic*
+    void Acquire(); // these are the only operations on a lock
+    void Release(); // they are both *atomic*
 
-    bool IsHeldByCurrentThread(); 
-    				// return true if the current thread 
-				// holds this lock.
-    
-    // Note: SelfTest routine provided by SynchList
-    
+    bool isHeldByCurrentThread();	// true if the current thread
+					// holds this lock.  Useful for
+					// checking in Release, and in
+					// Condition variable ops below.
+
   private:
-    char *name;			// debugging assist
-    Thread *lockHolder;		// thread currently holding lock
-    Semaphore *semaphore;	// we use a semaphore to implement lock
+    char* name;				// for debugging
+    // plus some other stuff you'll need to define
 };
 
 // The following class defines a "condition variable".  A condition
@@ -117,15 +116,14 @@ class Lock {
 //
 // The consequence of using Mesa-style semantics is that some other thread
 // can acquire the lock, and change data structures, before the woken
-// thread gets a chance to run.  The advantage to Mesa-style semantics
-// is that it is a lot easier to implement than Hoare-style.
+// thread gets a chance to run.
 
 class Condition {
   public:
-    Condition(char* debugName);	// initialize condition to 
+    Condition(char* debugName);		// initialize condition to 
 					// "no one waiting"
     ~Condition();			// deallocate the condition
-    char* getName();
+    char* getName() { return (name); }
     
     void Wait(Lock *conditionLock); 	// these are the 3 operations on 
 					// condition variables; releasing the 
@@ -134,10 +132,17 @@ class Condition {
     void Signal(Lock *conditionLock);   // conditionLock must be held by
     void Broadcast(Lock *conditionLock);// the currentThread for all of 
 					// these operations
-    // SelfTest routine provided by SyncLists
+
+    // The same operations as defined above but done implemented using a
+    // Semaphore instead of a lock
+    void Wait(Semaphore *mutex); 	
+    void Signal();   
+    void Broadcast();
+
+    List *queue;       // threads waiting in P() for the value to be > 0
 
   private:
     char* name;
-    List<Semaphore *> *waitQueue;	// list of waiting threads
+    // plus some other stuff you'll need to define
 };
 #endif // SYNCH_H
