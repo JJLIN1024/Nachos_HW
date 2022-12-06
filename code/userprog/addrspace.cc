@@ -55,8 +55,8 @@ SwapHeader (NoffHeader *noffH)
 //----------------------------------------------------------------------
 
 // Initialized the physical page usage information table & free page info
-bool AddrSpace::usedPhyPage[NumPhysPages] = {PAGE_FREE};
-int AddrSpace::numFreePage = NumPhysPages;
+// bool AddrSpace::usedPhyPage[NumPhysPages] = {PAGE_FREE};
+// int AddrSpace::numFreePage = NumPhysPages;
 
 AddrSpace::AddrSpace()
 {
@@ -149,11 +149,11 @@ AddrSpace::Load(char *fileName)
                 j += 1;
                  
             //if memory is enough,just put data in without using virtual memory
-            if(j<NumPhysPages){
+            if(j < NumPhysPages){
                 pageTable[i].physicalPage = j;      // record in physical memory position j
                 pageTable[i].use = FALSE;
                 pageTable[i].dirty = FALSE;
-                pageTable[i].ID =ID;
+                pageTable[i].ID = ID;
                 pageTable[i].readOnly = FALSE;
                 pageTable[i].valid = TRUE;          // TRUE means the page exists in physical memory
                 kernel->machine->Occupied_frame[j]=TRUE;
