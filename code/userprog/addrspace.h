@@ -32,7 +32,7 @@ class AddrSpace {
 
     // static bool usedPhyPage[NumPhysPages]; // Physical page usage information 
     // static int numFreePage;
-    int ID;
+    // int ID;
 
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation

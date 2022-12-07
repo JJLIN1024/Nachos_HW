@@ -140,12 +140,9 @@ class Machine {
     bool UsedPhysPages[NumPhysPages];
 	// Page: Virtual Page
     bool UsedVirtualPages[NumPhysPages];
-    
-    // LRU 
-    int LRU_times[NumPhysPages]; //for LRU
 
-    TranslationEntry *main_tab[NumPhysPages];
-
+	// page table
+    TranslationEntry *main_tab[NumPhysPages]; 
 
   private:
 
