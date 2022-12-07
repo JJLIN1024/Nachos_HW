@@ -133,18 +133,16 @@ class Machine {
     unsigned int pageTableSize;
     bool ReadMem(int addr, int size, int* value);
 
-
-
-    int  Identity;
-    int SectorNum;//record sector number
-    int FrameName[NumPhysPages];
-    bool Occupied_frame[NumPhysPages];//record which frame in the main memory is occupied.
-    bool Occupied_virpage[NumPhysPages];
+	// Virtual Memory Implementation
+    int machine_ID;
+    int PhysPageInfo[NumPhysPages];
+	// Frame: page in main memory
+    bool UsedPhysPages[NumPhysPages];
+	// Page: Virtual Page
+    bool UsedVirtualPages[NumPhysPages];
     
-    // start for page replacement //
+    // LRU 
     int LRU_times[NumPhysPages]; //for LRU
-    bool reference_bit[NumPhysPages];//for second chance algorithm.
-    // end //
 
     TranslationEntry *main_tab[NumPhysPages];
 

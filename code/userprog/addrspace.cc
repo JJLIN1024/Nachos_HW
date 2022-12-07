@@ -60,8 +60,8 @@ SwapHeader (NoffHeader *noffH)
 
 AddrSpace::AddrSpace()
 {
-      ID=(kernel->machine->Identity)++;
-      kernel->machine->Identity=(kernel->machine->Identity)++;
+      ID=(kernel->machine->machine_ID)++;
+      kernel->machine->machine_ID=(kernel->machine->machine_ID)++;
 }
 
 //----------------------------------------------------------------------
@@ -114,25 +114,9 @@ AddrSpace::Load(char *fileName)
     numPages = divRoundUp(size, PageSize);
 //	cout << "number of pages of " << fileName<< " is "<<numPages<<endl;
 
-
     pageTable = new TranslationEntry[numPages];
 
     size = numPages * PageSize;
-
-    // pageTable = new TranslationEntry[numPages];
-    // for(unsigned int i = 0, j = 0; i < numPages; i++) {
-    //     pageTable[i].virtualPage = i;
-    //     // Linearly search for the first unused page
-    //     while(j < NumPhysPages && AddrSpace::usedPhyPage[j] == PAGE_USED) 
-    //         j++;
-    //     AddrSpace::usedPhyPage[j] = PAGE_USED;
-    //     AddrSpace::numFreePage--;
-    //     pageTable[i].physicalPage = j;
-    //     pageTable[i].valid = true;
-    //     pageTable[i].use = false;
-    //     pageTable[i].dirty = false;
-    //     pageTable[i].readOnly = false;
-    // }
 
     // DEBUG(dbgAddr, "Initializing address space: " << numPages << ", " << size);
 
@@ -143,11 +127,10 @@ AddrSpace::Load(char *fileName)
     //     	executable->ReadAt(
 	// 	&(kernel->machine->mainMemory[pageTable[noffH.code.virtualAddr/PageSize].physicalPage * PageSize + (noffH.code.virtualAddr % PageSize)]), 
 	// 		noffH.code.size, noffH.code.inFileAddr);
-        for(int j=0,i=0;i < numPages ;i++){
-            j=0;
-            while(kernel->machine->Occupied_frame[j] != FALSE && j < NumPhysPages)
+        for(int j = 0,i = 0; i < numPages ;i++){
+            j = 0;
+            while(kernel->machine->UsedPhysPages[j] != FALSE && j < NumPhysPages)
                 j += 1;
-                 
             //if memory is enough,just put data in without using virtual memory
             if(j < NumPhysPages){
                 pageTable[i].physicalPage = j;      // record in physical memory position j
@@ -155,10 +138,10 @@ AddrSpace::Load(char *fileName)
                 pageTable[i].dirty = FALSE;
                 pageTable[i].ID = ID;
                 pageTable[i].readOnly = FALSE;
-                pageTable[i].valid = TRUE;          // TRUE means the page exists in physical memory
-                kernel->machine->Occupied_frame[j]=TRUE;
-                kernel->machine->FrameName[j]=ID;
-                kernel->machine->main_tab[j]=&pageTable[i];        // save the page pointer
+                pageTable[i].valid = TRUE;          // page exists in physical memory
+                kernel->machine->UsedPhysPages[j] = TRUE;
+                kernel->machine->PhysPageInfo[j] = ID;
+                kernel->machine->main_tab[j] = &pageTable[i];        // save the page pointer
                 pageTable[i].LRU_times++;
                 // save data to position j
                 executable->ReadAt(&(kernel->machine->mainMemory[j*PageSize]),PageSize, noffH.code.inFileAddr+(i*PageSize));  
@@ -167,15 +150,15 @@ AddrSpace::Load(char *fileName)
             else{
                 char *buffer;
                 buffer = new char[PageSize];
-                tmp=0;
-                while(kernel->machine->Occupied_virpage[tmp]!=FALSE){tmp++;}
-                pageTable[i].virtualPage=tmp;
+                tmp = 0;
+                while(kernel->machine->UsedVirtualPages[tmp]!=FALSE){tmp++;}
+                pageTable[i].virtualPage = tmp;
                 pageTable[i].ID = ID;
                 pageTable[i].valid = FALSE;
                 pageTable[i].dirty = FALSE;
                 pageTable[i].readOnly = FALSE;
                 pageTable[i].use = FALSE;
-                kernel->machine->Occupied_virpage[tmp]=true;
+                kernel->machine->UsedVirtualPages[tmp]=true;
                 executable->ReadAt(buffer,PageSize, noffH.code.inFileAddr+(i*PageSize));
                 kernel->swapSpace->WriteSector(tmp, buffer); //call virtual_disk write in virtual memory
             }

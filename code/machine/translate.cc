@@ -211,12 +211,12 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 	if (vpn >= pageTableSize) {
 	    DEBUG(dbgAddr, "Illegal virtual page # " << virtAddr);
 	    return AddressErrorException;
-	} else if (!pageTable[vpn].valid) {
+	} else if (!pageTable[vpn].valid) { // page replacement
 
         printf("Page fault Happen!\n");
         kernel->stats->numPageFaults += 1;     // nachos pagefault counter +1
         j=0;
-        while(kernel->machine->Occupied_frame[j]!=FALSE&&j<NumPhysPages)
+        while(kernel->machine->UsedPhysPages[j]!=FALSE&&j<NumPhysPages)
             j += 1;                            // find valid frame space
        
             if( j < NumPhysPages){          // if find valid frame space, save the page in virtual memory into physical memory
@@ -224,8 +224,8 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
                 buffer = new char[PageSize];
                 pageTable[vpn].physicalPage = j;       // save physical memory position
                 pageTable[vpn].valid = TRUE;           // page has already in physical memory
-                kernel->machine->Occupied_frame[j]=TRUE;
-                kernel->machine->FrameName[j]=pageTable[vpn].ID;
+                kernel->machine->UsedPhysPages[j]=TRUE;
+                kernel->machine->PhysPageInfo[j]=pageTable[vpn].ID;
                 kernel->machine->main_tab[j]=&pageTable[vpn];           // save the page pointer
                     
                 pageTable[vpn].LRU_times++; //for LRU
@@ -244,7 +244,6 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
                 //Swap_out_page = (rand()%32);
                      
                 //LRU
-                     
                 int min = pageTable[0].LRU_times;
                 Swap_out_page=0;
                 for(int cc=0;cc<32;cc++){
@@ -254,9 +253,6 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
                     }
                 } 
                 pageTable[Swap_out_page].LRU_times++;  
-                     
-                    
-                     
                      
                 printf("Page%d swap out!\n",Swap_out_page);
                 bcopy(&mainMemory[Swap_out_page*PageSize],buffer1,PageSize);
@@ -269,12 +265,10 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 
                 pageTable[vpn].valid = TRUE;
                 pageTable[vpn].physicalPage = Swap_out_page;
-                kernel->machine->FrameName[Swap_out_page]=pageTable[vpn].ID;
+                kernel->machine->PhysPageInfo[Swap_out_page]=pageTable[vpn].ID;
                 main_tab[Swap_out_page]=&pageTable[vpn];
          	    printf("Finish the page replcement!\n");
                 
-
-                  
         }
 	}
 	entry = &pageTable[vpn];

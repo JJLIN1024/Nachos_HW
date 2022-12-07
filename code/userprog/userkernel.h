@@ -33,8 +33,9 @@ class UserProgKernel : public ThreadedKernel {
     Machine *machine;
     FileSystem *fileSystem;
 
+    // Swap Space for Demand Paging
     SynchDisk *swapSpace;
-    // bool debugUserProg;     // single step user program
+
 #ifdef FILESYS
     SynchDisk *synchDisk;
 #endif // FILESYS
